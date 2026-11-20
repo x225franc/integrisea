@@ -38,7 +38,7 @@ services:
   # Stockage de fichiers compatible S3. RustFS : alternative libre à MinIO (même protocole S3).
   # MinIO ne publie plus d'images Docker publiques ; l'image reste modifiable via S3_IMAGE.
   s3:
-    profiles: ["storage", "app"]
+    profiles: ["storage"]
     image: ${S3_IMAGE:-rustfs/rustfs:latest}
     restart: unless-stopped
     environment:
@@ -77,8 +77,8 @@ services:
       TRUST_PROXY: ${TRUST_PROXY:-1}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
-      # Fichiers : « s3 » (service ci-dessus) ou « local » (volume uploads_data).
-      STORAGE_DRIVER: ${STORAGE_DRIVER:-s3}
+      # Fichiers : « local » (volume uploads_data, par défaut) ou « s3 » (service optionnel ci-dessus).
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
       S3_ENDPOINT: http://s3:9000
       S3_REGION: ${S3_REGION:-us-east-1}
       S3_BUCKET: ${S3_BUCKET}
@@ -90,8 +90,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      s3:
-        condition: service_started
 
   frontend:
     profiles: ["app"]

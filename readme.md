@@ -44,8 +44,8 @@ Le frontend appelle l'API en relatif (`/api`) : le serveur Vite relaie vers le b
 | `npm run test:e2e --prefix backend` | 51 vérifications de bout en bout (API démarrée + base de démonstration) |
 | `npm run db:migrate` / `db:seed` / `db:reset` | base de données (`db:reset` interdit en production) |
 | `npm run docker:up` / `docker:down` | MySQL + phpMyAdmin |
-| `npm run docker:storage` | service S3 (RustFS), facultatif en développement |
-| `npm run docker:prod` | déploiement complet (nginx + API + MySQL + phpMyAdmin + S3) |
+| `npm run docker:storage` | service S3 (RustFS), **facultatif** |
+| `npm run docker:prod` | déploiement complet (nginx + API + MySQL + phpMyAdmin) |
 
 ## Environnements
 
@@ -64,14 +64,15 @@ Les droits sont attribués **par installation** (un utilisateur peut être ingé
 
 ## Stockage des fichiers
 
-`STORAGE_DRIVER=local` (dossier `backend/uploads`) en développement ; `s3` en production (service Docker `s3`).
-**MinIO** ne publie plus d'images Docker publiques : le service utilise **RustFS** (S3 compatible, Apache 2.0). Le code parle le protocole S3 standard, donc MinIO, AWS S3 ou autre fonctionnent en changeant `S3_ENDPOINT` / `S3_*` (ou `S3_IMAGE` pour l'image Docker). Test réel : `STORAGE_DRIVER=s3 node backend/tests/s3.smoke.js` après `npm run docker:storage`.
+**Par défaut, les fichiers sont stockés sur le disque de la machine** (`STORAGE_DRIVER=local`) : dossier `backend/uploads` en développement, volume Docker `uploads_data` en déploiement. Aucun service supplémentaire. Pensez à sauvegarder ce volume avec la base de données.
+
+Option : un stockage compatible S3 (`STORAGE_DRIVER=s3`, service Docker `s3` via `npm run docker:storage`, ou un S3 existant en renseignant `S3_*`). MinIO ne publie plus d'images publiques ; le service fourni utilise **RustFS** (S3 compatible). Test : `STORAGE_DRIVER=s3 node backend/tests/s3.smoke.js`.
 
 ## Déploiement (Docker Compose)
 
 ```bash
 # 1. renseigner .env.production (tous les "change_me", URLs)
-npm run docker:prod                      # construit et démarre : nginx (FRONTEND_PORT), API, MySQL, phpMyAdmin, S3
+npm run docker:prod                      # construit et démarre : nginx (FRONTEND_PORT), API, MySQL, phpMyAdmin
 docker compose --env-file .env.production exec backend node scripts/seed.js   # crée l'administrateur (1re fois)
 ```
 

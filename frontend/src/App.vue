@@ -20,6 +20,13 @@ const isPublic = computed(() => route.meta.public);
 const nav = computed(() => [
 	{ to: '/', icon: 'fa-gauge-high', label: t('nav.dashboard'), show: true },
 	{ to: '/assets', icon: 'fa-list-ul', label: t('nav.assets'), show: true },
+	{ to: '/rbi', icon: 'fa-table-cells', label: t('nav.rbi'), show: true },
+	{ to: '/criticality', icon: 'fa-shield-halved', label: t('nav.criticality'), show: true },
+	{ to: '/inspections', icon: 'fa-clipboard-check', label: t('nav.inspections'), show: true },
+	{ to: '/anomalies', icon: 'fa-triangle-exclamation', label: t('nav.anomalies'), show: true },
+	{ to: '/maintenance', icon: 'fa-screwdriver-wrench', label: t('nav.maintenance'), show: true },
+	{ to: '/materials', icon: 'fa-boxes-stacked', label: t('nav.materials'), show: true },
+	{ to: '/documents', icon: 'fa-folder-open', label: t('nav.documents'), show: true },
 	{ to: '/facilities', icon: 'fa-sitemap', label: t('nav.facilities'), show: true },
 	{ to: '/audit', icon: 'fa-clock-rotate-left', label: t('nav.audit'), show: auth.canAny('engineer') },
 	{ to: '/users', icon: 'fa-users', label: t('nav.users'), show: auth.user?.isAdmin },

@@ -1,0 +1,12 @@
+# Environnements (jamais versionnés : seuls les .example le sont)
+.env
+.env.development
+.env.production
+.env.*.local
+
+node_modules
+dist
+backend/uploads
+backend/logs
+*.log
+.DS_Store

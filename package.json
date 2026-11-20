@@ -1,0 +1,26 @@
+{
+  "name": "integrisea",
+  "version": "0.1.0",
+  "private": true,
+  "description": "IntegriSea — gestion de l'intégrité des actifs offshore (AIMS). Backend Express/MySQL, frontend Vue 3, moteur de calcul isolé.",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix ./backend && npm install --prefix ./frontend",
+    "dev": "concurrently -n api,web -c blue,green \"npm run start --prefix ./backend\" \"npm run dev --prefix ./frontend\"",
+    "start": "concurrently -n api,web -c blue,green \"npm install --prefix ./backend && npm run start --prefix ./backend\" \"npm install --prefix ./frontend && npm run dev --prefix ./frontend\"",
+    "start:prod": "concurrently -n api,web -c blue,green \"npm run start:prod --prefix ./backend\" \"npm run dev:prod --prefix ./frontend\"",
+    "build": "npm run build --prefix ./frontend",
+    "test": "npm run test --prefix ./packages/engine && npm run test --prefix ./backend",
+    "db:migrate": "npm run db:migrate --prefix ./backend",
+    "db:seed": "npm run db:seed --prefix ./backend",
+    "db:reset": "npm run db:reset --prefix ./backend",
+    "docker:up": "docker compose --env-file .env.development up -d db phpmyadmin",
+    "docker:down": "docker compose --env-file .env.development down",
+    "docker:prod": "docker compose --env-file .env.production --profile app up -d --build",
+    "docker:storage": "docker compose --env-file .env.development --profile storage up -d minio"
+  },
+  "keywords": [],
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

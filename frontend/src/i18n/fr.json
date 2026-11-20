@@ -1,0 +1,27 @@
+{
+  "app": { "name": "IntegriSea", "tagline": "Gestion de l'intégrité des actifs" },
+  "warning": "Calculs non validés : tous les résultats doivent être validés par des ingénieurs intégrité qualifiés avant toute utilisation opérationnelle.",
+  "nav": { "dashboard": "Tableau de bord", "assets": "Registre des actifs", "facilities": "Installations et systèmes", "users": "Utilisateurs", "config": "Configuration", "audit": "Piste d'audit", "logout": "Déconnexion", "password": "Mot de passe", "allFacilities": "Toutes les installations" },
+  "common": { "save": "Enregistrer", "cancel": "Annuler", "close": "Fermer", "edit": "Modifier", "create": "Créer", "delete": "Supprimer", "search": "Rechercher…", "all": "Tous", "none": "—", "loading": "Chargement…", "empty": "Aucun résultat", "yes": "Oui", "no": "Non", "actions": "Actions", "saved": "Enregistré", "error": "Une erreur est survenue", "page": "Page", "of": "sur", "comingSoon": "Disponible dans une prochaine étape" },
+  "login": { "title": "Connexion", "email": "Email", "password": "Mot de passe", "submit": "Se connecter", "expired": "Session expirée, veuillez vous reconnecter.", "failed": "Email ou mot de passe incorrect" },
+  "dashboard": { "welcome": "Bienvenue", "assets": "Actifs actifs", "facilities": "Installations", "systems": "Systèmes", "byClass": "Actifs par classe", "next": "Le tableau de bord complet (risque, inspections, anomalies) arrive avec les étapes suivantes." },
+  "assets": {
+    "title": "Registre des actifs", "new": "Nouvel actif", "import": "Importer", "export": "Exporter", "template": "Télécharger le modèle", "showArchived": "Archivés",
+    "tag": "Tag", "description": "Description", "class": "Classe", "system": "Système", "facility": "Installation", "fluid": "Fluide", "material": "Matériau",
+    "designPressure": "Pression de calcul (barg)", "designTemp": "Température de calcul (°C)", "od": "Diamètre extérieur (mm)", "nominalThickness": "Épaisseur nominale (mm)",
+    "installYear": "Année d'installation", "mechanisms": "Mécanismes de dégradation", "mechanismsHint": "Séparés par des virgules", "crit": "Notes de conséquence (1 à 5)", "critS": "Sécurité (S)", "critE": "Environnement (E)", "critP": "Production (P)", "critDefault": "Défaut",
+    "archive": "Archiver", "restore": "Restaurer", "archived": "Archivé", "archiveConfirm": "Archiver cet actif ? Il reste consultable et son historique est conservé.",
+    "tabs": { "attributes": "Attributs", "criticality": "Criticité / RBI", "inspections": "Inspections", "anomalies": "Anomalies", "maintenance": "Maintenance", "spares": "Pièces de rechange", "documents": "Documents", "history": "Historique des modifications" },
+    "total": "{n} actif(s)", "created": "Actif créé", "updated": "Actif modifié", "tagTaken": "Ce tag existe déjà"
+  },
+  "import": {
+    "title": "Importer des actifs (CSV / Excel)", "file": "Fichier .csv ou .xlsx", "hint": "Les tags existants sont mis à jour, les nouveaux sont créés. Colonnes : voir le modèle.", "check": "Vérifier", "run": "Importer", "partial": "Importer les lignes valides même s'il y a des erreurs",
+    "valid": "{n} ligne(s) valide(s)", "done": "Import terminé : {created} créé(s), {updated} mis à jour", "errors": "Erreurs", "line": "Ligne", "none": "Aucune erreur"
+  },
+  "facilities": { "title": "Installations et systèmes", "newFacility": "Nouvelle installation", "newSystem": "Nouveau système", "code": "Code", "name": "Nom", "type": "Type", "systems": "Systèmes", "assets": "Actifs", "deleteSystem": "Supprimer ce système ?" },
+  "users": { "title": "Utilisateurs", "new": "Nouvel utilisateur", "email": "Email", "fullName": "Nom complet", "password": "Mot de passe (10 caractères min.)", "admin": "Administrateur", "active": "Actif", "locale": "Langue", "rights": "Droits par installation", "role": "Rôle", "lastLogin": "Dernière connexion", "addRight": "Ajouter une installation", "never": "Jamais" },
+  "roles": { "admin": "Administrateur", "engineer": "Ingénieur intégrité", "inspector": "Inspecteur", "reader": "Lecteur" },
+  "config": { "title": "Configuration", "classes": "Classes d'équipements", "attributes": "Attributs supplémentaires", "nameFr": "Nom (FR)", "nameEn": "Nom (EN)", "tracking": "Suivi", "thickness": "Épaisseur (UT)", "condition": "État (grade)", "cfihos": "Code CFIHOS", "active": "Actif", "newClass": "Nouvelle classe", "newAttr": "Nouvel attribut", "key": "Clé", "type": "Type", "scope": "Classe (vide = toutes)", "more": "Matrice de risque, intervalles, contraintes admissibles, gabarits… : étapes suivantes." },
+  "audit": { "title": "Piste d'audit", "when": "Date", "who": "Utilisateur", "action": "Action", "entity": "Objet", "details": "Détails", "before": "Avant", "after": "Après", "from": "Du", "to": "Au", "all": "Tous" },
+  "password": { "title": "Changer le mot de passe", "current": "Mot de passe actuel", "new": "Nouveau mot de passe (10 caractères min.)" }
+}

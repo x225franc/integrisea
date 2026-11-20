@@ -1,0 +1,753 @@
+[
+ {
+  "tag": "10-V-1001",
+  "system": "AUR-M10",
+  "cls": "PV",
+  "description": "HP production separator",
+  "fluid": "Multiphase HC",
+  "material": "CS",
+  "design_pressure_barg": 45,
+  "design_temp_c": 90,
+  "od_mm": 3000,
+  "nominal_thickness_mm": 60,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion",
+   "Erosion",
+   "Sand"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "10-V-1002",
+  "system": "AUR-M10",
+  "cls": "PV",
+  "description": "LP separator",
+  "fluid": "Multiphase HC",
+  "material": "CS",
+  "design_pressure_barg": 10,
+  "design_temp_c": 85,
+  "od_mm": 2800,
+  "nominal_thickness_mm": 28,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "10-HX-1010",
+  "system": "AUR-M10",
+  "cls": "HX",
+  "description": "Crude oil heater (shell side)",
+  "fluid": "Crude oil",
+  "material": "CS",
+  "design_pressure_barg": 20,
+  "design_temp_c": 120,
+  "od_mm": 1200,
+  "nominal_thickness_mm": 18,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion",
+   "Fouling"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "10-PL-1001",
+  "system": "AUR-M10",
+  "cls": "PIPE",
+  "description": "8\" well fluid inlet header",
+  "fluid": "Multiphase HC",
+  "material": "22Cr Duplex",
+  "design_pressure_barg": 120,
+  "design_temp_c": 95,
+  "od_mm": 219.1,
+  "nominal_thickness_mm": 12.7,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Erosion",
+   "Sand"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "10-PL-1015",
+  "system": "AUR-M10",
+  "cls": "PIPE",
+  "description": "6\" oil outlet line from HP separator",
+  "fluid": "Crude oil",
+  "material": "CS",
+  "design_pressure_barg": 45,
+  "design_temp_c": 90,
+  "od_mm": 168.3,
+  "nominal_thickness_mm": 7.11,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion",
+   "CUI"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "10-PL-1022",
+  "system": "AUR-M10",
+  "cls": "PIPE",
+  "description": "3\" produced water outlet line",
+  "fluid": "Produced water",
+  "material": "CS",
+  "design_pressure_barg": 10,
+  "design_temp_c": 80,
+  "od_mm": 88.9,
+  "nominal_thickness_mm": 5.49,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion",
+   "MIC"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "10-PSV-1001",
+  "system": "AUR-M10",
+  "cls": "PSV",
+  "description": "HP separator relief valve",
+  "fluid": "Multiphase HC",
+  "material": "CS",
+  "design_pressure_barg": 45,
+  "design_temp_c": 90,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Fouling",
+   "Seat leakage"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "10-SBT-1001",
+  "system": "AUR-M10",
+  "cls": "SBT",
+  "description": "Instrument tubing — separator level bridle",
+  "fluid": "Multiphase HC",
+  "material": "316L",
+  "design_pressure_barg": 45,
+  "design_temp_c": 90,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Vibration fatigue",
+   "Chloride pitting"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "20-V-2001",
+  "system": "AUR-M20",
+  "cls": "PV",
+  "description": "1st stage compressor suction scrubber",
+  "fluid": "HC gas",
+  "material": "CS",
+  "design_pressure_barg": 40,
+  "design_temp_c": 45,
+  "od_mm": 1500,
+  "nominal_thickness_mm": 32,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion",
+   "Wet gas"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "20-HX-2010",
+  "system": "AUR-M20",
+  "cls": "HX",
+  "description": "Compressor discharge gas cooler",
+  "fluid": "HC gas",
+  "material": "CS",
+  "design_pressure_barg": 120,
+  "design_temp_c": 140,
+  "od_mm": 900,
+  "nominal_thickness_mm": 50,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion",
+   "Fatigue"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "20-PL-2003",
+  "system": "AUR-M20",
+  "cls": "PIPE",
+  "description": "10\" compressor discharge line",
+  "fluid": "HC gas",
+  "material": "22Cr Duplex",
+  "design_pressure_barg": 150,
+  "design_temp_c": 140,
+  "od_mm": 273.1,
+  "nominal_thickness_mm": 15.09,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Vibration fatigue",
+   "Chloride SCC"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "20-PL-2008",
+  "system": "AUR-M20",
+  "cls": "PIPE",
+  "description": "2\" anti-surge recycle line",
+  "fluid": "HC gas",
+  "material": "CS",
+  "design_pressure_barg": 40,
+  "design_temp_c": 60,
+  "od_mm": 60.3,
+  "nominal_thickness_mm": 3.91,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion",
+   "Vibration fatigue"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "20-PSV-2001",
+  "system": "AUR-M20",
+  "cls": "PSV",
+  "description": "Discharge scrubber relief valve",
+  "fluid": "HC gas",
+  "material": "CS",
+  "design_pressure_barg": 150,
+  "design_temp_c": 140,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Seat leakage"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "20-EX-2101",
+  "system": "AUR-M20",
+  "cls": "EX",
+  "description": "Ex d junction box JB-2101 (Zone 1)",
+  "fluid": "Electrical",
+  "material": "Al alloy",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Ingress",
+   "Gland degradation"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "30-V-3001",
+  "system": "AUR-M30",
+  "cls": "PV",
+  "description": "Deaerator tower",
+  "fluid": "Seawater",
+  "material": "CS",
+  "design_pressure_barg": 2,
+  "design_temp_c": 30,
+  "od_mm": 3000,
+  "nominal_thickness_mm": 16,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Oxygen corrosion",
+   "Lining failure"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "30-PL-3001",
+  "system": "AUR-M30",
+  "cls": "PIPE",
+  "description": "12\" water injection header",
+  "fluid": "Seawater",
+  "material": "22Cr Duplex",
+  "design_pressure_barg": 220,
+  "design_temp_c": 30,
+  "od_mm": 323.9,
+  "nominal_thickness_mm": 25.4,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Erosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "30-PL-3010",
+  "system": "AUR-M30",
+  "cls": "PIPE",
+  "description": "6\" seawater lift line",
+  "fluid": "Seawater",
+  "material": "CuNi 90/10",
+  "design_pressure_barg": 10,
+  "design_temp_c": 25,
+  "od_mm": 168.3,
+  "nominal_thickness_mm": 5,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Erosion",
+   "MIC"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "40-V-4001",
+  "system": "AUR-M40",
+  "cls": "PV",
+  "description": "Produced water hydrocyclone",
+  "fluid": "Produced water",
+  "material": "22Cr Duplex",
+  "design_pressure_barg": 15,
+  "design_temp_c": 80,
+  "od_mm": 800,
+  "nominal_thickness_mm": 12,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Erosion",
+   "Sand"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "40-PL-4002",
+  "system": "AUR-M40",
+  "cls": "PIPE",
+  "description": "4\" produced water to overboard",
+  "fluid": "Produced water",
+  "material": "CS",
+  "design_pressure_barg": 15,
+  "design_temp_c": 75,
+  "od_mm": 114.3,
+  "nominal_thickness_mm": 6.02,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "MIC",
+   "CO2 corrosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "50-PL-5001",
+  "system": "AUR-M50",
+  "cls": "PIPE",
+  "description": "4\" fuel gas supply header",
+  "fluid": "Fuel gas",
+  "material": "CS",
+  "design_pressure_barg": 30,
+  "design_temp_c": 40,
+  "od_mm": 114.3,
+  "nominal_thickness_mm": 6.02,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "CO2 corrosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "50-EX-5101",
+  "system": "AUR-M50",
+  "cls": "EX",
+  "description": "Ex e motor terminal box — fuel gas compressor",
+  "fluid": "Electrical",
+  "material": "Steel",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Ingress"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "50-HOSE-5001",
+  "system": "AUR-M50",
+  "cls": "HOSE",
+  "description": "3\" diesel bunkering hose",
+  "fluid": "Diesel",
+  "material": "Rubber / steel",
+  "design_pressure_barg": 10,
+  "design_temp_c": 40,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2019,
+  "degradation_mechanisms": [
+   "Ageing",
+   "Abrasion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "HUL-STR-001",
+  "system": "AUR-HUL",
+  "cls": "STR",
+  "description": "Cargo tank 3P — transverse bulkhead",
+  "fluid": "Structural",
+  "material": "Steel AH36",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Corrosion",
+   "Coating breakdown"
+  ],
+  "crit": [
+   4,
+   3,
+   4
+  ]
+ },
+ {
+  "tag": "HUL-STR-002",
+  "system": "AUR-HUL",
+  "cls": "STR",
+  "description": "Topsides module support stools — Frame 45",
+  "fluid": "Structural",
+  "material": "Steel AH36",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Fatigue",
+   "Corrosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "HUL-PL-0101",
+  "system": "AUR-HUL",
+  "cls": "PIPE",
+  "description": "10\" ballast water main",
+  "fluid": "Seawater",
+  "material": "CS",
+  "design_pressure_barg": 10,
+  "design_temp_c": 25,
+  "od_mm": 273.1,
+  "nominal_thickness_mm": 9.27,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "MIC",
+   "Erosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "TUR-STR-001",
+  "system": "AUR-TUR",
+  "cls": "STR",
+  "description": "Turret main bearing support structure",
+  "fluid": "Structural",
+  "material": "Steel",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Fatigue",
+   "Wear"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "TUR-RIS-001",
+  "system": "AUR-TUR",
+  "cls": "RISER",
+  "description": "8\" flexible production riser P-01",
+  "fluid": "Multiphase HC",
+  "material": "Flexible pipe",
+  "design_pressure_barg": 120,
+  "design_temp_c": 95,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2014,
+  "degradation_mechanisms": [
+   "Annulus flooding",
+   "Armour wire fatigue"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "TUR-HOSE-001",
+  "system": "AUR-TUR",
+  "cls": "HOSE",
+  "description": "Swivel jumper hose — gas export",
+  "fluid": "HC gas",
+  "material": "Composite",
+  "design_pressure_barg": 150,
+  "design_temp_c": 40,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2018,
+  "degradation_mechanisms": [
+   "Ageing",
+   "Fatigue"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-V-0101",
+  "system": "WHA-TOP",
+  "cls": "PV",
+  "description": "Test separator",
+  "fluid": "Multiphase HC",
+  "material": "CS",
+  "design_pressure_barg": 60,
+  "design_temp_c": 85,
+  "od_mm": 1200,
+  "nominal_thickness_mm": 32,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "CO2 corrosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-PL-0102",
+  "system": "WHA-TOP",
+  "cls": "PIPE",
+  "description": "6\" production header",
+  "fluid": "Multiphase HC",
+  "material": "22Cr Duplex",
+  "design_pressure_barg": 150,
+  "design_temp_c": 90,
+  "od_mm": 168.3,
+  "nominal_thickness_mm": 10.97,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Erosion",
+   "Sand"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-PL-0110",
+  "system": "WHA-TOP",
+  "cls": "PIPE",
+  "description": "4\" chemical injection header",
+  "fluid": "Chemicals",
+  "material": "316L",
+  "design_pressure_barg": 150,
+  "design_temp_c": 30,
+  "od_mm": 114.3,
+  "nominal_thickness_mm": 8.56,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Chloride pitting"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-PSV-0101",
+  "system": "WHA-TOP",
+  "cls": "PSV",
+  "description": "Test separator relief valve",
+  "fluid": "Multiphase HC",
+  "material": "CS",
+  "design_pressure_barg": 60,
+  "design_temp_c": 85,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Seat leakage",
+   "Fouling"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-EX-0201",
+  "system": "WHA-TOP",
+  "cls": "EX",
+  "description": "Ex d floodlight — cellar deck",
+  "fluid": "Electrical",
+  "material": "Al alloy",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Ingress",
+   "Corrosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-SBT-0101",
+  "system": "WHA-TOP",
+  "cls": "SBT",
+  "description": "Wellhead control panel tubing",
+  "fluid": "Instrument",
+  "material": "316L",
+  "design_pressure_barg": 345,
+  "design_temp_c": 40,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Chloride pitting",
+   "Loose fittings"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-STR-J01",
+  "system": "WHA-STR",
+  "cls": "STR",
+  "description": "Jacket leg A1 — splash zone",
+  "fluid": "Structural",
+  "material": "Steel S355",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Corrosion",
+   "Marine growth"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-STR-J02",
+  "system": "WHA-STR",
+  "cls": "STR",
+  "description": "Jacket node K-brace at −12 m",
+  "fluid": "Structural",
+  "material": "Steel S355",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Fatigue"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-STR-D01",
+  "system": "WHA-STR",
+  "cls": "STR",
+  "description": "Cellar deck primary framing",
+  "fluid": "Structural",
+  "material": "Steel S355",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Corrosion",
+   "Coating breakdown"
+  ],
+  "crit": [
+   4,
+   1,
+   3
+  ]
+ },
+ {
+  "tag": "WHA-STR-H01",
+  "system": "WHA-STR",
+  "cls": "STR",
+  "description": "Helideck structure",
+  "fluid": "Structural",
+  "material": "Aluminium",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Corrosion",
+   "Fatigue"
+  ],
+  "crit": [
+   5,
+   1,
+   2
+  ]
+ },
+ {
+  "tag": "WHA-STR-B01",
+  "system": "WHA-STR",
+  "cls": "STR",
+  "description": "Boat landing",
+  "fluid": "Structural",
+  "material": "Steel S355",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Impact damage",
+   "Corrosion"
+  ],
+  "crit": [
+   2,
+   1,
+   1
+  ]
+ },
+ {
+  "tag": "WHA-RIS-001",
+  "system": "WHA-RIS",
+  "cls": "RISER",
+  "description": "10\" oil export riser — splash zone",
+  "fluid": "Crude oil",
+  "material": "CS",
+  "design_pressure_barg": 120,
+  "design_temp_c": 60,
+  "od_mm": 273.1,
+  "nominal_thickness_mm": 15.09,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "CO2 corrosion",
+   "Splash zone corrosion"
+  ],
+  "crit": null
+ },
+ {
+  "tag": "WHA-CON-001",
+  "system": "WHA-RIS",
+  "cls": "STR",
+  "description": "Conductor C-3 and guides",
+  "fluid": "Structural",
+  "material": "Steel",
+  "design_pressure_barg": null,
+  "design_temp_c": null,
+  "od_mm": null,
+  "nominal_thickness_mm": null,
+  "install_year": 2010,
+  "degradation_mechanisms": [
+   "Corrosion",
+   "Fatigue"
+  ],
+  "crit": [
+   3,
+   2,
+   3
+  ]
+ }
+]

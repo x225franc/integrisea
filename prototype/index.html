@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IntegriSea — Asset Integrity Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0e2233; --navy2:#16324a; --ink:#17202a; --muted:#5d6b78; --line:#dfe4ea; --bg:#f4f6f8; --card:#fff;
+  --accent:#0b7a8a; --accent2:#e6f3f5;
+  --L:#2e9d5b; --M:#e0b400; --MH:#ec7a1c; --H:#d0342c;
+  --Lbg:#e3f4ea; --Mbg:#fdf5d6; --MHbg:#fde9d8; --Hbg:#fbe1df;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.45}
+.mono{white-space:nowrap;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+aside{background:var(--navy);color:#cfdbe6;padding:18px 0;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{padding:0 20px 18px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:10px}
+.brand b{display:block;color:#fff;font-size:18px;letter-spacing:.2px}
+.brand span{font-size:12px;color:#8fa6ba}
+nav a{display:flex;align-items:center;gap:10px;padding:9px 20px;color:#cfdbe6;text-decoration:none;font-size:14px;border-left:3px solid transparent}
+nav a:hover{background:rgba(255,255,255,.05)}
+nav a.on{background:var(--navy2);color:#fff;border-left-color:#4fc3d1}
+nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#6f879b;padding:14px 20px 4px}
+nav svg{width:16px;height:16px;flex:none;opacity:.85}
+main{min-width:0}
+.top{display:flex;gap:12px;align-items:center;padding:12px 24px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.top h1{font-size:18px;margin:0 auto 0 0;font-weight:600}
+.disclaimer{background:#fff8e1;border-bottom:1px solid #f1e2a6;color:#6b5a14;font-size:12.5px;padding:6px 24px}
+.content{padding:20px 24px 60px}
+select,input,textarea{font:inherit;border:1px solid #c9d1d9;border-radius:6px;padding:6px 8px;background:#fff;color:var(--ink)}
+textarea{width:100%;min-height:64px}
+input[type=number]{width:110px}
+.btn{border:1px solid #c9d1d9;background:#fff;border-radius:6px;padding:6px 12px;color:var(--ink)}
+.btn:hover{background:#f1f4f6}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{background:#09697a}
+.btn.sm{padding:3px 9px;font-size:12.5px}
+.btn.danger{color:var(--H);border-color:#e9b7b3}
+.grid{display:grid;gap:16px}
+.grid>*{min-width:0}
+.g6{grid-template-columns:repeat(6,1fr)} .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h3{margin:0 0 12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card h3 .sub{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:auto}
+.kpi .v{font-size:28px;font-weight:600;line-height:1.1}
+.kpi .l{color:var(--muted);font-size:12.5px;margin-top:4px}
+.kpi.warn .v{color:var(--H)} .kpi.amb .v{color:var(--MH)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafbfc;position:sticky;top:0;cursor:default;white-space:nowrap}
+.tbl th.s{cursor:pointer} .tbl th.s:hover{color:var(--ink)}
+.tbl td{padding:8px 10px;border-bottom:1px solid #eef1f4;vertical-align:top}
+.tbl tr.click{cursor:pointer} .tbl tr.click:hover td{background:#f5fafb}
+.tblwrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.r-L{background:var(--Lbg);color:#1d6e3f}.r-M{background:var(--Mbg);color:#7a6200}.r-MH{background:var(--MHbg);color:#9c4a07}.r-H{background:var(--Hbg);color:#a3221b}
+.s-ov{background:var(--Hbg);color:#a3221b}.s-due{background:var(--MHbg);color:#9c4a07}.s-ok{background:#eef1f4;color:#4a5865}
+.c-A{background:#20384f;color:#fff}.c-B{background:#7f97ad;color:#fff}.c-C{background:#e2e8ee;color:#33414e}
+.p-P1{background:var(--H);color:#fff}.p-P2{background:var(--MH);color:#fff}.p-P3{background:var(--M);color:#3d3100}.p-P4{background:#c9d1d9;color:#26323d}
+.chip{display:inline-block;background:var(--accent2);color:#085c68;border-radius:4px;padding:1px 6px;margin:1px 3px 1px 0;font-size:12px;cursor:pointer}
+.muted{color:var(--muted)}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.toolbar .sp{flex:1}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tabs button{border:0;background:none;padding:8px 14px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+/* matrix */
+.mx{display:grid;grid-template-columns:28px repeat(5,1fr);gap:3px;font-size:12px}
+.mx .cell{aspect-ratio:1.5;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;cursor:pointer;border:2px solid transparent;user-select:none}
+.mx .cell.sel{border-color:var(--ink)}
+.mx .cell .z{opacity:.35;font-weight:400}
+.mx .ax{display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.mx .cL{background:#bfe6cd}.mx .cM{background:#f8e79a}.mx .cMH{background:#f9c393}.mx .cH{background:#f2a39e}
+.mxlab{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:6px}
+/* tree */
+.tree{font-size:13.5px}
+.tree .f{font-weight:600;padding:6px 8px;border-radius:6px;cursor:pointer}
+.tree .s{padding:5px 8px 5px 22px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between}
+.tree .on{background:var(--accent2);color:#085c68}
+.tree div:hover{background:#eef3f6}
+/* drawer & modal */
+.scrim{position:fixed;inset:0;background:rgba(14,34,51,.35);z-index:20;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(680px,100vw);background:#fff;z-index:21;box-shadow:-8px 0 30px rgba(0,0,0,.15);transform:translateX(100%);transition:transform .2s;overflow:auto}
+.drawer.on{transform:none}
+.dhead{padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2}
+.dhead h2{margin:0;font-size:18px}
+.dbody{padding:16px 22px 40px}
+.dbody h4{margin:22px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 16px}
+.kv div>span:first-child{display:block;font-size:11.5px;color:var(--muted)}
+.x{position:absolute;right:16px;top:14px;border:0;background:none;font-size:22px;color:var(--muted)}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(640px,94vw);max-height:90vh;overflow:auto;background:#fff;border-radius:12px;z-index:31;box-shadow:0 20px 50px rgba(0,0,0,.25);display:none}
+.modal.on{display:block}
+.mscrim{position:fixed;inset:0;background:rgba(14,34,51,.45);z-index:30;display:none}
+.mscrim.on{display:block}
+.modal .mh{padding:16px 20px;border-bottom:1px solid var(--line);font-weight:600;font-size:16px;position:relative}
+.modal .mb{padding:16px 20px}
+.modal .mf{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.frm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.frm label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+.frm label.w{grid-column:1/-1}
+.frm input,.frm select{width:100%}
+.reasons{margin:6px 0 0;padding-left:18px}
+.reasons li{margin:2px 0}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:9px 16px;border-radius:8px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.bar{height:10px;border-radius:5px;background:#eef1f4;overflow:hidden}
+.bar i{display:block;height:100%}
+.hint{font-size:12.5px;color:var(--muted);margin:4px 0 12px}
+.pf{display:flex;gap:6px}
+.pf label{flex-direction:row;align-items:center;gap:4px;color:var(--ink)}
+@media (max-width:1100px){.g6{grid-template-columns:repeat(3,1fr)}.g3{grid-template-columns:1fr 1fr}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  aside{position:static;height:auto;padding:8px 0}
+  .brand{padding-bottom:8px}
+  nav{display:flex;overflow:auto}
+  nav .grp{display:none}
+  nav a{white-space:nowrap;border-left:0;border-bottom:3px solid transparent;padding:8px 12px}
+  nav a.on{border-bottom-color:#4fc3d1}
+  .g6{grid-template-columns:1fr 1fr}.g3,.g2,.split{grid-template-columns:1fr!important}
+  .kv{grid-template-columns:1fr 1fr}
+  .top{position:static}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><b>IntegriSea</b><span>Asset integrity management · demo</span></div>
+    <nav id="nav"></nav>
+  </aside>
+  <main>
+    <div class="top">
+      <h1 id="title">Dashboard</h1>
+      <select id="fac" aria-label="Facility"></select>
+      <input id="q" type="search" placeholder="Search tag or description…" style="width:230px">
+    </div>
+    <div class="disclaimer">Demonstration only. Fictional facilities and data. Calculations are simplified and not validated for engineering decisions. Changes are saved in this browser only.</div>
+    <div class="content" id="view"></div>
+  </main>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer"></div>
+<div class="mscrim" id="mscrim"></div>
+<div class="modal" id="modal"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+/* ---------------- utilities ---------------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=(n,w=2)=>String(n).padStart(w,'0');
+const r2=n=>Math.round(n*100)/100;
+const fmt=(n,d=1)=>n==null||isNaN(n)?'—':(+n).toFixed(d);
+const DAY=864e5;
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const TODAY=iso(new Date());
+const pd=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const yearsBetween=(a,b)=>(pd(b)-pd(a))/(365.25*DAY);
+const daysBetween=(a,b)=>Math.round((pd(b)-pd(a))/DAY);
+const addMonths=(s,m)=>{const d=pd(s);const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+m);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return iso(d)};
+const addDays=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return iso(d)};
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fd=s=>{if(!s)return '—';const d=pd(s);return pad(d.getDate())+' '+MON[d.getMonth()]+' '+d.getFullYear()};
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),2200)}
+async function copyText(txt,label){try{await navigator.clipboard.writeText(txt);toast((label||'Copied')+' to clipboard')}catch(e){openModal('Copy manually','<p class="hint">Your browser blocked clipboard access. Select the text below and copy it.</p><textarea style="min-height:260px" class="mono">'+esc(txt)+'</textarea>','<button class="btn" data-a="close-modal">Close</button>')}}
+
+/* ---------------- reference data ---------------- */
+const CLASSES={PIPE:'Process piping',PV:'Pressure vessel',HX:'Heat exchanger',PSV:'Pressure safety valve',RISER:'Riser',STR:'Structure',EX:'Ex equipment',HOSE:'Hose',SBT:'Small-bore tubing'};
+const FLUID_CRIT={'Multiphase HC':[5,4,5],'Crude oil':[4,4,4],'HC gas':[5,3,4],'Fuel gas':[4,2,3],'Produced water':[2,3,2],'Seawater':[1,1,3],'Diesel':[3,3,2],'Chemicals':[3,3,2],'Structural':[5,2,5],'Instrument':[3,2,3],'Electrical':[4,1,2]};
+const PRIORITY={P1:{days:7,label:'P1 — Immediate action (7 days)'},P2:{days:30,label:'P2 — Urgent (30 days)'},P3:{days:90,label:'P3 — Planned (90 days)'},P4:{days:365,label:'P4 — Next scheduled (12 months)'}};
+const RISK_NAME={L:'Low',M:'Medium',MH:'Medium-high',H:'High'};
+const CONS_DESC={
+  s:['No injury','First aid / minor injury','Lost-time injury','Single fatality or major injury','Multiple fatalities'],
+  e:['No impact','Minor local release, contained','Reportable release, short-term impact','Major release, significant impact','Massive release, long-term damage'],
+  p:['No loss','< 1 day deferment','1–7 days deferment','1–4 weeks deferment','> 1 month / field shutdown']};
+const INSPECTORS=['J. Okafor','M. Lindqvist','R. Santos','A. Haddad','K. Tan','S. Moreau'];
+const ICONS={
+ dashboard:'<path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/>',
+ assets:'<path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/>',
+ inspections:'<path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/>',
+ anomalies:'<path d="M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z"/>',
+ rbi:'<path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/>',
+ criticality:'<path d="M12 2 4 5v6c0 5.5 3.4 10.7 8 12 4.6-1.3 8-6.5 8-12V5z"/>',
+ strategy:'<path d="M22.7 19 13.6 9.9c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>',
+ materials:'<path d="M20 7h-4V5l-2-2h-4L8 5v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 5h4v2h-4z"/>',
+ documents:'<path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8zm-1 7V3.5L18.5 9z"/>',
+ config:'<path d="M19.4 13c0-.3.1-.7.1-1s0-.7-.1-1l2.1-1.6c.2-.2.2-.4.1-.6l-2-3.5c-.1-.2-.4-.3-.6-.2l-2.5 1c-.5-.4-1.1-.7-1.7-1l-.4-2.6c0-.2-.2-.4-.5-.4h-4c-.2 0-.4.2-.5.4l-.4 2.6c-.6.3-1.2.6-1.7 1l-2.5-1c-.2-.1-.5 0-.6.2l-2 3.5c-.1.2-.1.4.1.6L4.6 11c0 .3-.1.7-.1 1s0 .7.1 1l-2.1 1.6c-.2.2-.2.4-.1.6l2 3.5c.1.2.4.3.6.2l2.5-1c.5.4 1.1.7 1.7 1l.4 2.6c0 .2.2.4.5.4h4c.2 0 .4-.2.5-.4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1c.2.1.5 0 .6-.2l2-3.5c.1-.2.1-.4-.1-.6zM12 15.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/>'};
+const VIEWS_META=[
+ ['dashboard','Dashboard','Overview'],
+ ['assets','Asset Register','Asset data'],['criticality','Criticality'],['documents','Document Register'],
+ ['inspections','Inspections','Integrity'],['anomalies','Anomalies'],['rbi','RBI & Risk'],
+ ['strategy','Maintenance Strategy','Maintenance'],['materials','Materials & Spares'],
+ ['config','Configuration','Admin']];
+
+/* ---------------- seed data ---------------- */
+// [tag, system, class, description, fluid, material, design P barg, design T °C, OD mm, t nom mm, install year, damage mechanisms, corrosion rate mm/y (null = condition-based), history, consequence override]
+const ROWS=[
+['10-V-1001','AUR-M10','PV','HP production separator','Multiphase HC','CS',45,90,3000,60,2014,'CO2 corrosion|Erosion|Sand',0.12,'2018,2022'],
+['10-V-1002','AUR-M10','PV','LP separator','Multiphase HC','CS',10,85,2800,28,2014,'CO2 corrosion',0.08,'2019,2024'],
+['10-HX-1010','AUR-M10','HX','Crude oil heater (shell side)','Crude oil','CS',20,120,1200,18,2014,'CO2 corrosion|Fouling',0.10,'2018,2023'],
+['10-PL-1001','AUR-M10','PIPE','8" well fluid inlet header','Multiphase HC','22Cr Duplex',120,95,219.1,12.7,2014,'Erosion|Sand',0.04,'2017,2021,2025'],
+['10-PL-1015','AUR-M10','PIPE','6" oil outlet line from HP separator','Crude oil','CS',45,90,168.3,7.11,2014,'CO2 corrosion|CUI',0.30,'2018,2021,2024'],
+['10-PL-1022','AUR-M10','PIPE','3" produced water outlet line','Produced water','CS',10,80,88.9,5.49,2014,'CO2 corrosion|MIC',0.15,'2018,2023'],
+['10-PSV-1001','AUR-M10','PSV','HP separator relief valve','Multiphase HC','CS',45,90,0,0,2014,'Fouling|Seat leakage',null,'2020:1,2022:3,2024:1'],
+['10-SBT-1001','AUR-M10','SBT','Instrument tubing — separator level bridle','Multiphase HC','316L',45,90,0,0,2014,'Vibration fatigue|Chloride pitting',null,'2021:2,2024:2'],
+['20-V-2001','AUR-M20','PV','1st stage compressor suction scrubber','HC gas','CS',40,45,1500,32,2014,'CO2 corrosion|Wet gas',0.09,'2018,2022'],
+['20-HX-2010','AUR-M20','HX','Compressor discharge gas cooler','HC gas','CS',120,140,900,50,2014,'CO2 corrosion|Fatigue',0.06,'2019,2024'],
+['20-PL-2003','AUR-M20','PIPE','10" compressor discharge line','HC gas','22Cr Duplex',150,140,273.1,15.09,2014,'Vibration fatigue|Chloride SCC',0.03,'2018,2023'],
+['20-PL-2008','AUR-M20','PIPE','2" anti-surge recycle line','HC gas','CS',40,60,60.3,3.91,2014,'CO2 corrosion|Vibration fatigue',0.12,'2017,2020'],
+['20-PSV-2001','AUR-M20','PSV','Discharge scrubber relief valve','HC gas','CS',150,140,0,0,2014,'Seat leakage',null,'2019:1,2022:1'],
+['20-EX-2101','AUR-M20','EX','Ex d junction box JB-2101 (Zone 1)','Electrical','Al alloy',0,0,0,0,2014,'Ingress|Gland degradation',null,'2020:1,2023:3'],
+['30-V-3001','AUR-M30','PV','Deaerator tower','Seawater','CS',2,30,3000,16,2014,'Oxygen corrosion|Lining failure',0.05,'2017,2022'],
+['30-PL-3001','AUR-M30','PIPE','12" water injection header','Seawater','22Cr Duplex',220,30,323.9,25.4,2014,'Erosion',0.02,'2019,2024'],
+['30-PL-3010','AUR-M30','PIPE','6" seawater lift line','Seawater','CuNi 90/10',10,25,168.3,5.0,2014,'Erosion|MIC',0.10,'2018,2022,2025'],
+['40-V-4001','AUR-M40','PV','Produced water hydrocyclone','Produced water','22Cr Duplex',15,80,800,12,2014,'Erosion|Sand',0.03,'2019,2024'],
+['40-PL-4002','AUR-M40','PIPE','4" produced water to overboard','Produced water','CS',15,75,114.3,6.02,2014,'MIC|CO2 corrosion',0.25,'2018,2022,2025'],
+['50-PL-5001','AUR-M50','PIPE','4" fuel gas supply header','Fuel gas','CS',30,40,114.3,6.02,2014,'CO2 corrosion',0.05,'2019,2024'],
+['50-EX-5101','AUR-M50','EX','Ex e motor terminal box — fuel gas compressor','Electrical','Steel',0,0,0,0,2014,'Ingress',null,'2021:1,2024:2'],
+['50-HOSE-5001','AUR-M50','HOSE','3" diesel bunkering hose','Diesel','Rubber / steel',10,40,0,0,2019,'Ageing|Abrasion',null,'2022:2,2024:3'],
+['HUL-STR-001','AUR-HUL','STR','Cargo tank 3P — transverse bulkhead','Structural','Steel AH36',0,0,0,0,2014,'Corrosion|Coating breakdown',null,'2019:2,2024:3',[4,3,4]],
+['HUL-STR-002','AUR-HUL','STR','Topsides module support stools — Frame 45','Structural','Steel AH36',0,0,0,0,2014,'Fatigue|Corrosion',null,'2020:1,2023:2'],
+['HUL-PL-0101','AUR-HUL','PIPE','10" ballast water main','Seawater','CS',10,25,273.1,9.27,2014,'MIC|Erosion',0.20,'2018,2023'],
+['TUR-STR-001','AUR-TUR','STR','Turret main bearing support structure','Structural','Steel',0,0,0,0,2014,'Fatigue|Wear',null,'2021:1,2024:1'],
+['TUR-RIS-001','AUR-TUR','RISER','8" flexible production riser P-01','Multiphase HC','Flexible pipe',120,95,0,0,2014,'Annulus flooding|Armour wire fatigue',null,'2023:2,2025:3'],
+['TUR-HOSE-001','AUR-TUR','HOSE','Swivel jumper hose — gas export','HC gas','Composite',150,40,0,0,2018,'Ageing|Fatigue',null,'2021:1,2024:2'],
+['WHA-V-0101','WHA-TOP','PV','Test separator','Multiphase HC','CS',60,85,1200,32,2010,'CO2 corrosion',0.10,'2016,2021'],
+['WHA-PL-0102','WHA-TOP','PIPE','6" production header','Multiphase HC','22Cr Duplex',150,90,168.3,10.97,2010,'Erosion|Sand',0.03,'2015,2020,2024'],
+['WHA-PL-0110','WHA-TOP','PIPE','4" chemical injection header','Chemicals','316L',150,30,114.3,8.56,2010,'Chloride pitting',0.02,'2016,2022'],
+['WHA-PSV-0101','WHA-TOP','PSV','Test separator relief valve','Multiphase HC','CS',60,85,0,0,2010,'Seat leakage|Fouling',null,'2020:1,2023:1'],
+['WHA-EX-0201','WHA-TOP','EX','Ex d floodlight — cellar deck','Electrical','Al alloy',0,0,0,0,2010,'Ingress|Corrosion',null,'2019:2,2022:2'],
+['WHA-SBT-0101','WHA-TOP','SBT','Wellhead control panel tubing','Instrument','316L',345,40,0,0,2010,'Chloride pitting|Loose fittings',null,'2020:2,2024:3'],
+['WHA-STR-J01','WHA-STR','STR','Jacket leg A1 — splash zone','Structural','Steel S355',0,0,0,0,2010,'Corrosion|Marine growth',null,'2018:2,2023:3'],
+['WHA-STR-J02','WHA-STR','STR','Jacket node K-brace at −12 m','Structural','Steel S355',0,0,0,0,2010,'Fatigue',null,'2017:1,2022:2'],
+['WHA-STR-D01','WHA-STR','STR','Cellar deck primary framing','Structural','Steel S355',0,0,0,0,2010,'Corrosion|Coating breakdown',null,'2019:2,2024:2',[4,1,3]],
+['WHA-STR-H01','WHA-STR','STR','Helideck structure','Structural','Aluminium',0,0,0,0,2010,'Corrosion|Fatigue',null,'2022:1,2025:1',[5,1,2]],
+['WHA-STR-B01','WHA-STR','STR','Boat landing','Structural','Steel S355',0,0,0,0,2010,'Impact damage|Corrosion',null,'2021:2,2024:3',[2,1,1]],
+['WHA-RIS-001','WHA-RIS','RISER','10" oil export riser — splash zone','Crude oil','CS',120,60,273.1,15.09,2010,'CO2 corrosion|Splash zone corrosion',0.20,'2014,2019,2023'],
+['WHA-CON-001','WHA-RIS','STR','Conductor C-3 and guides','Structural','Steel',0,0,0,0,2010,'Corrosion|Fatigue',null,'2018:2,2023:2',[3,2,3]]
+];
+
+function defaultTemplates(){
+  const notes={k:'notes',l:'Findings / notes',t:'textarea'}, grade={k:'grade',l:'Condition grade (1 good – 4 poor)',t:'grade'};
+  return [
+  {id:'UT',name:'UT Thickness Survey',classes:['PIPE','PV','HX','RISER'],fields:[{k:'cmls',l:'Thickness readings by CML (mm)',t:'cml'},{k:'coating',l:'External coating condition',t:'select',o:['Good','Fair','Poor']},notes]},
+  {id:'GVI',name:'General Visual Inspection',classes:Object.keys(CLASSES),fields:[grade,notes]},
+  {id:'EXD',name:'Detailed Ex Inspection (IEC 60079-17)',classes:['EX'],fields:[
+    {k:'c1',l:'Marking and certificate match the area classification',t:'pf'},{k:'c2',l:'Enclosure and glass undamaged',t:'pf'},
+    {k:'c3',l:'Flamepath gaps and fasteners satisfactory',t:'pf'},{k:'c4',l:'Cable glands secure and correct type',t:'pf'},
+    {k:'c5',l:'Earthing and bonding intact',t:'pf'},{k:'c6',l:'No unauthorised modifications',t:'pf'},notes]},
+  {id:'PSV',name:'PSV Bench Test',classes:['PSV'],fields:[{k:'set',l:'Set pressure (barg)',t:'num'},{k:'pop',l:'As-found pop pressure (barg)',t:'num'},{k:'seat',l:'Seat tightness test',t:'pf'},notes]},
+  {id:'STR',name:'Structural Close Visual Inspection',classes:['STR'],fields:[grade,{k:'coating',l:'Coating breakdown (%)',t:'num'},{k:'crack',l:'Crack-like indications found',t:'select',o:['No','Yes']},notes]},
+  {id:'HOSE',name:'Hose Inspection & Pressure Test',classes:['HOSE'],fields:[grade,{k:'ptest',l:'Hydrostatic pressure test',t:'pf'},notes]},
+  {id:'ANN',name:'Riser Annulus Vent Test',classes:['RISER'],fields:[grade,{k:'vent',l:'Annulus vent / vacuum test',t:'pf'},notes]},
+  {id:'SBT',name:'Small-Bore Tubing Inspection',classes:['SBT'],fields:[grade,{k:'loose',l:'Loose or mixed fittings found (count)',t:'num'},notes]}];
+}
+const CLASS_MAX={EX:36,PSV:36,HOSE:12,SBT:24};
+const CLS_TPL={PSV:'PSV',EX:'EXD',STR:'STR',HOSE:'HOSE',RISER:'ANN',SBT:'SBT'};
+
+function defaultStrategies(){
+  const R='RBI';
+  return [
+  ['PIPE','Loss of containment','Internal corrosion (CO2, MIC)','Hydrocarbon or water release','UT thickness survey at CMLs','UT / PAUT',R,'Integrity'],
+  ['PIPE','Loss of containment','External corrosion / CUI','Release; coating degradation','General visual and coating survey','GVI',36,'Integrity'],
+  ['PIPE','Loss of containment','Erosion at bends and tees','Wall loss at fittings','Profile radiography of bends','RT / UT',R,'Integrity'],
+  ['PIPE','Fatigue failure of branch','Vibration fatigue (small-bore connections)','Small-bore connection failure','Vibration survey and SBC assessment','Vibration survey',24,'Mechanical'],
+  ['PV','Loss of containment','Internal corrosion','Release of process inventory','Internal visual inspection at turnaround','IVI',R,'Integrity'],
+  ['PV','Loss of containment','Internal corrosion (online)','Release of process inventory','External UT thickness survey','UT',R,'Integrity'],
+  ['PV','Nozzle cracking','Fatigue / weld defects','Leak at nozzle','MPI of nozzle welds','MPI / ACFM',72,'Integrity'],
+  ['PV','External degradation','External corrosion','Shell wall loss','General visual inspection','GVI',36,'Integrity'],
+  ['HX','Tube leak','Corrosion / erosion of tubes','Cross-contamination, release','Eddy current testing of tube bundle','ECT',R,'Integrity'],
+  ['HX','Loss of containment','Shell-side corrosion','Release','UT thickness survey','UT',R,'Integrity'],
+  ['PSV','Fails to open on demand','Fouling, spring degradation','Overpressure of protected equipment','Bench pop test and overhaul','Bench test',36,'Mechanical'],
+  ['PSV','Passing / seat leak','Seat damage','Flaring losses, fouling','Passing check (acoustic)','Acoustic',12,'Mechanical'],
+  ['RISER','Loss of containment','Annulus flooding / armour fatigue','Major hydrocarbon release','Annulus vent and vacuum test','Annulus test',12,'Subsea'],
+  ['RISER','External damage','Impact, abrasion, splash zone corrosion','Loss of riser integrity','ROV / rope access visual survey','GVI / CVI',12,'Subsea'],
+  ['RISER','Loss of containment','Internal corrosion (rigid risers)','Major hydrocarbon release','UT thickness survey','UT',R,'Integrity'],
+  ['STR','Loss of structural capacity','Corrosion and coating breakdown','Reduced strength','Close visual inspection and coating survey','CVI',48,'Structural'],
+  ['STR','Fatigue cracking','Wave / machinery cyclic loading','Member or node failure','Flooded member detection / ACFM at nodes','FMD / ACFM',60,'Structural'],
+  ['STR','Impact damage','Vessel or dropped-object impact','Dent, bow, loss of capacity','General visual inspection','GVI',12,'Structural'],
+  ['STR','Overload','Marine growth above design limit','Increased hydrodynamic loading','ROV marine growth survey','ROV GVI',12,'Structural'],
+  ['EX','Loss of explosion protection','Ingress, corrosion, gland loosening','Ignition source in hazardous area','Detailed Ex inspection','Detailed (IEC 60079-17)',36,'Electrical'],
+  ['EX','Loss of explosion protection','Visual degradation','Ignition source','Visual Ex inspection','Visual',12,'Electrical'],
+  ['HOSE','Rupture / leak','Ageing, abrasion, kinking','Release of contents','Visual inspection','GVI',6,'Mechanical'],
+  ['HOSE','Rupture / leak','Loss of pressure rating','Release of contents','Hydrostatic pressure test','Pressure test',12,'Mechanical'],
+  ['HOSE','End of life','Ageing','Unplanned failure','Planned replacement','Retire',60,'Mechanical'],
+  ['SBT','Leak at fittings','Loose / mixed fittings, vibration','Gas release','Small-bore tubing inspection','Visual / torque check',24,'Instrument'],
+  ['SBT','Pitting leak','Chloride pitting of 316 tubing','Gas release','Visual pitting assessment','Visual',24,'Instrument']
+  ].map(r=>({cls:r[0],mode:r[1],mech:r[2],effect:r[3],task:r[4],method:r[5],interval:r[6],disc:r[7]}));
+}
+
+function defaultMatrix(){const m=[];for(let p=0;p<5;p++){m.push([]);for(let c=0;c<5;c++){const s=p+c+2;m[p].push(s<=4?'L':s<=6?'M':s<=8?'MH':'H')}}return m}
+
+function buildSeed(){
+  const rnd=mulberry32(20261120);
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  const facilities=[{id:'AUR',name:'FPSO Aurora',type:'Turret-moored FPSO'},{id:'WHA',name:'Wellhead Platform Alpha',type:'Fixed jacket wellhead platform'}];
+  const systems=[
+    {id:'AUR-M10',fac:'AUR',name:'M10 Separation module'},{id:'AUR-M20',fac:'AUR',name:'M20 Gas compression module'},
+    {id:'AUR-M30',fac:'AUR',name:'M30 Water injection module'},{id:'AUR-M40',fac:'AUR',name:'M40 Produced water treatment'},
+    {id:'AUR-M50',fac:'AUR',name:'M50 Power generation & fuel gas'},{id:'AUR-HUL',fac:'AUR',name:'Hull & marine systems'},
+    {id:'AUR-TUR',fac:'AUR',name:'Turret & swivel'},
+    {id:'WHA-TOP',fac:'WHA',name:'Topsides process'},{id:'WHA-STR',fac:'WHA',name:'Jacket & structures'},{id:'WHA-RIS',fac:'WHA',name:'Risers & conductors'}];
+  const assets=[],inspections=[];let iid=1;
+  ROWS.forEach(r=>{
+    const [tag,sys,cls,desc,fluid,mat,dp,dt,od,tnom,inst,dms,rate,hist,co]=r;
+    const c=co||FLUID_CRIT[fluid]||[3,2,3];
+    assets.push({tag,sys,cls,desc,fluid,mat,dp,dt,od,tnom,inst,dms:dms.split('|'),crit:{s:c[0],e:c[1],p:c[2]}});
+    if(rate!=null){
+      const fs=[1,.35+rnd()*.5,.35+rnd()*.5,.35+rnd()*.5];const gi=Math.floor(rnd()*4);[fs[0],fs[gi]]=[fs[gi],fs[0]];
+      hist.split(',').forEach(ys=>{
+        const y=+ys,m=1+Math.floor(rnd()*11);const date=y+'-'+pad(m)+'-'+pad(5+Math.floor(rnd()*20));
+        const yrs=yearsBetween(inst+'-07-01',date);
+        const readings=fs.map((f,i)=>({cml:'CML-'+pad(i+1),t:r2(tnom-rate*yrs*f+(rnd()-.5)*0.08)}));
+        inspections.push({id:'IR-'+pad(iid++,4),tag,date,tpl:'UT',inspector:pick(INSPECTORS),readings,data:{coating:rate>0.15?'Fair':'Good',notes:''},grade:null});
+      });
+    }else{
+      hist.split(',').forEach(h=>{
+        const [ys,gs]=h.split(':');const g=+gs,y=+ys,m=1+Math.floor(rnd()*11);
+        const date=y+'-'+pad(m)+'-'+pad(5+Math.floor(rnd()*20));const tpl=CLS_TPL[cls]||'GVI';
+        let data={notes:''};
+        if(tpl==='PSV')data={set:dp,pop:r2(dp*(g>=3?1.08:1.01)),seat:g>=3?'Fail':'Pass',notes:g>=3?'Lifted 8% above set. Overhauled and re-set.':'Within tolerance.'};
+        else if(tpl==='EXD'){data={notes:''};for(let i=1;i<=6;i++)data['c'+i]=(i<=g-1?'Fail':'Pass');if(g>1)data.notes=g>=3?'Cable gland loose; seal compound degraded.':'Minor surface corrosion on enclosure.'}
+        else if(tpl==='STR')data={grade:g,coating:Math.round(g*9+rnd()*6),crack:'No',notes:['','Light coating breakdown.','Coating breakdown with surface corrosion; no significant section loss measured.','Heavy corrosion.'][g-1]};
+        else if(tpl==='HOSE')data={grade:g,ptest:g>=3?'Fail':'Pass',notes:g>=3?'Cover abrasion and kinking near end fitting.':''};
+        else if(tpl==='ANN')data={grade:g,vent:g>=3?'Fail':'Pass',notes:g>=3?'Annulus vent rate abnormal; possible blockage.':''};
+        else if(tpl==='SBT')data={grade:g,loose:Math.max(0,g-1),notes:g>=3?'Mixed-manufacturer fittings found on 2 runs.':''};
+        else data={grade:g,notes:''};
+        inspections.push({id:'IR-'+pad(iid++,4),tag,date,tpl,inspector:pick(INSPECTORS),readings:null,data,grade:g});
+      });
+    }
+  });
+  inspections.sort((a,b)=>a.date<b.date?-1:1);
+  const an=(id,tag,raised,title,desc,priority,status,owner,temp,actions)=>({id,tag,raised,title,desc,priority,status,owner,temp:temp||null,actions:actions.map(a=>({text:a[0],owner:a[1],done:!!a[2]}))});
+  const anomalies=[
+    an('AN-0001','10-PL-1015','2024-06-12','Wall loss below 4.5 mm at elbow downstream of LCV','UT survey found localised wall loss at CML-03 elbow. Composite wrap installed as temporary repair.','P2','In progress','Integrity Eng. — AUR',{type:'Composite wrap',expiry:'2027-03-31'},[['Install temporary composite wrap','Construction',true],['Engineer spool replacement','Projects',false],['Replace spool at next shutdown','Operations',false]]),
+    an('AN-0002','WHA-RIS-001','2023-09-03','Splash zone coating breakdown with external corrosion','Rope access CVI found ~25% coating breakdown on riser clamp area, external pitting up to 1.2 mm.','P2','Open','Integrity Eng. — WHA',null,[['Detailed UT mapping of splash zone','Integrity',false],['Fitness-for-service assessment','Integrity',false],['Recoat or install splash zone sleeve','Construction',false]]),
+    an('AN-0003','20-PL-2008','2020-08-21','High vibration on anti-surge recycle small-bore branch','Vibration survey measured levels above screening criteria on 3/4" vent branch.','P2','Open','Mechanical Eng.',null,[['Install bracing on small-bore branch','Construction',false],['Re-survey vibration after bracing','Mechanical',false]]),
+    an('AN-0004','WHA-STR-B01','2024-04-17','Dented member on boat landing','Vessel impact. Dent depth ~35 mm on lower horizontal member.','P3','Open','Structural Eng.',null,[['Dent assessment','Structural',false]]),
+    an('AN-0005','HUL-STR-001','2024-10-02','Coating breakdown in cargo tank 3P','Coating breakdown ~30% on lower bulkhead strakes; pitting observed.','P3','Open','Marine Integrity',null,[['Thickness gauging of lower strakes','Marine Integrity',false],['Plan tank coating repair','Marine Integrity',false]]),
+    an('AN-0006','20-EX-2101','2023-05-11','Ex d gland not secure on JB-2101','Detailed Ex inspection found loose cable gland and degraded seal compound.','P2','Closed','Electrical Eng.',null,[['Replace gland and re-terminate','Electrical',true]]),
+    an('AN-0007','50-HOSE-5001','2024-09-14','Bunkering hose failed pressure test','Abrasion and kinking near end fitting; failed hydrostatic test.','P2','In progress','Marine Ops',null,[['Quarantine hose','Marine Ops',true],['Procure replacement hose','Supply chain',false]]),
+    an('AN-0008','TUR-RIS-001','2025-05-08','Abnormal annulus vent rate on riser P-01','Possible vent blockage or annulus flooding. Vent rate outside expected range.','P1','Open','Subsea Integrity',null,[['Repeat annulus vacuum test','Subsea',false],['Notify riser supplier for assessment','Subsea',false]]),
+    an('AN-0009','40-PL-4002','2025-03-19','Suspected MIC pitting on PW overboard line','UT scan shows isolated pits at 6 o\'clock position. Bacteria sampling recommended.','P2','Open','Integrity Eng. — AUR',null,[['Bacteria sampling','Chemistry',false],['Review biocide treatment','Chemistry',false]]),
+    an('AN-0010','WHA-STR-J01','2023-07-22','Marine growth thickness above design allowance','ROV survey measured 140 mm marine growth vs 100 mm design allowance at −5 to −15 m.','P3','Open','Structural Eng.',null,[['Marine growth cleaning campaign','Subsea',false]]),
+    an('AN-0011','10-PSV-1001','2022-03-09','PSV lifted 8% above set pressure','Bench test as-found pop pressure outside ±3% tolerance.','P2','Closed','Mechanical Eng.',null,[['Overhaul and re-set PSV','Workshop',true],['Reduce test interval review','Integrity',true]])
+  ];
+  const materials=[
+    ['SP-1001','Spiral-wound gasket 8" CL600 SS316/graphite','Gasket',24,10,'High',['10-PL-1001','WHA-PL-0102']],
+    ['SP-1002','PSV soft goods kit 3" × 4"','PSV spares',2,2,'High',['10-PSV-1001','WHA-PSV-0101']],
+    ['SP-1003','Ex d cable gland M25, IIC','Electrical',3,10,'High',['20-EX-2101','WHA-EX-0201']],
+    ['SP-1004','Composite repair kit 6" (ISO 24817)','Repair',1,2,'High',['10-PL-1015','WHA-PL-0102']],
+    ['SP-1005','Leak sealing clamp 4"','Repair',2,1,'Medium',['40-PL-4002','50-PL-5001']],
+    ['SP-1006','Tube plugs and expander kit','HX spares',6,4,'Medium',['10-HX-1010','20-HX-2010']],
+    ['SP-1007','Bunkering hose assembly 3" × 15 m','Hose',0,1,'High',['50-HOSE-5001']],
+    ['SP-1008','Stud bolt set 10" CL900 B7M/2HM','Bolting',8,4,'Medium',['20-PL-2003','WHA-RIS-001','HUL-PL-0101']],
+    ['SP-1009','Twin-ferrule compression fittings 1/2" 316','Instrument',140,100,'Medium',['10-SBT-1001','WHA-SBT-0101']],
+    ['SP-1010','Retrofit sacrificial anode (clamp-on)','Structural',4,6,'Medium',['WHA-STR-J01','WHA-CON-001']],
+    ['SP-1011','Annulus vent valve kit — flexible riser','Riser spares',1,1,'High',['TUR-RIS-001']],
+    ['SP-1012','Separator internals gasket set','Vessel spares',2,1,'Medium',['10-V-1001','10-V-1002','WHA-V-0101']]
+  ].map(r=>({code:r[0],desc:r[1],cat:r[2],stock:r[3],min:r[4],crit:r[5],tags:r[6]}));
+  const documents=[];let dn=1;
+  systems.forEach(s=>documents.push({no:s.fac+'-PID-'+s.id.split('-')[1],title:'P&ID — '+s.name,type:'P&ID',rev:'C'+(1+dn%3),tags:assets.filter(a=>a.sys===s.id).map(a=>a.tag)}));
+  assets.forEach(a=>{
+    if(a.cls==='PIPE'||a.cls==='RISER'&&a.tnom)documents.push({no:a.tag+'-ISO-01',title:'Isometric — '+a.desc,type:'Isometric',rev:'B'+(1+(dn++)%2),tags:[a.tag]});
+    if(a.cls==='PV'||a.cls==='HX')documents.push({no:a.tag+'-DS',title:'Mechanical datasheet — '+a.desc,type:'Datasheet',rev:'A2',tags:[a.tag]});
+    if(a.cls==='EX')documents.push({no:a.tag+'-EXCERT',title:'Ex certificate — '+a.desc,type:'Certificate',rev:'—',tags:[a.tag]});
+    if(a.cls==='STR')documents.push({no:a.tag+'-DWG',title:'Structural drawing — '+a.desc,type:'Drawing',rev:'D1',tags:[a.tag]});
+  });
+  documents.push({no:'AUR-IMP-001',title:'Integrity management plan — FPSO Aurora',type:'Plan',rev:'5',tags:[]});
+  documents.push({no:'WHA-IMP-001',title:'Integrity management plan — WHP Alpha',type:'Plan',rev:'7',tags:[]});
+  documents.push({no:'AUR-RBI-2024',title:'RBI study report — topsides',type:'Report',rev:'1',tags:assets.filter(a=>a.sys.startsWith('AUR-M')).map(a=>a.tag)});
+  documents.push({no:'WHA-SIM-2023',title:'Structural integrity management assessment',type:'Report',rev:'2',tags:assets.filter(a=>a.cls==='STR'&&a.tag.startsWith('WHA')).map(a=>a.tag)});
+  return {version:1,facilities,systems,assets,inspections,anomalies,materials,documents,
+    settings:{matrix:defaultMatrix(),intervals:{L:96,M:60,MH:36,H:12},stress:{'CS':138,'22Cr Duplex':207,'316L':115,'CuNi 90/10':69},templates:defaultTemplates(),strategies:defaultStrategies()}};
+}
+
+/* ---------------- state ---------------- */
+const KEY='integrisea-demo-v1';
+let DB=null;
+try{const s=localStorage.getItem(KEY);if(s)DB=JSON.parse(s)}catch(e){}
+if(!DB||DB.version!==1)DB=buildSeed();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){}}
+const UI={view:'dashboard',fac:'ALL',q:'',sys:null,cls:'',insTab:'schedule',anStatus:'Open+',anPri:'',mx:null,stratCls:'PIPE',docType:'',sort:{}};
+let M={};
+
+/* ---------------- calculations ---------------- */
+function tminOf(a){
+  if(!(a.od>0&&a.tnom>0))return null;
+  const S=DB.settings.stress[a.mat]||138,P=a.dp*0.1;let t;
+  if(a.cls==='PV'||a.cls==='HX'){const R=a.od/2-a.tnom;t=Math.max(P*R/(S-0.6*P),2.5)}
+  else t=Math.max(P*a.od/(2*(S+0.4*P)),a.od<=114.3?2.0:2.8);
+  return r2(t);
+}
+function gradeFor(tpl,data){
+  if(tpl.id==='UT')return null;
+  let g=data.grade?+data.grade:1;
+  const pfs=tpl.fields.filter(f=>f.t==='pf');const fails=pfs.filter(f=>data[f.k]==='Fail').length;
+  if(tpl.id==='EXD')g=Math.max(g,[1,2,3,4,4,4,4][fails]);else if(fails)g=Math.max(g,3);
+  if(tpl.id==='PSV'&&data.set>0&&data.pop>0){const dev=Math.abs(data.pop-data.set)/data.set;if(dev>0.10)g=4;else if(dev>0.03)g=Math.max(g,3)}
+  if(tpl.id==='STR'){if(data.crack==='Yes')g=4;else if(+data.coating>30)g=Math.max(g,3)}
+  if(tpl.id==='SBT'){if(+data.loose>3)g=Math.max(g,3);else if(+data.loose>0)g=Math.max(g,2)}
+  return Math.min(4,g);
+}
+function computeAll(){
+  const byTag={};DB.inspections.forEach(i=>(byTag[i.tag]=byTag[i.tag]||[]).push(i));
+  Object.values(byTag).forEach(l=>l.sort((a,b)=>a.date<b.date?-1:1));
+  const openAn={};DB.anomalies.filter(a=>a.status!=='Closed').forEach(a=>(openAn[a.tag]=openAn[a.tag]||[]).push(a));
+  const out={};
+  DB.assets.forEach(a=>{
+    const ins=byTag[a.tag]||[];const m={thick:a.od>0&&a.tnom>0,reasons:[],ins};
+    m.cof=Math.max(a.crit.s,a.crit.e,a.crit.p);m.crit=m.cof>=4?'A':m.cof===3?'B':'C';m.sce=a.crit.s>=4;
+    m.last=ins.length?ins[ins.length-1]:null;
+    let pof,base,rlAtLast=null;
+    if(m.thick){
+      m.tmin=tminOf(a);
+      const uts=ins.filter(i=>i.readings&&i.readings.length);
+      if(uts.length){
+        const g=uts.map(i=>({d:i.date,t:Math.min(...i.readings.map(r=>+r.t))}));const L=g[g.length-1];
+        m.crLT=Math.max(0,(a.tnom-L.t)/Math.max(yearsBetween(a.inst+'-07-01',L.d),0.5));
+        if(g.length>1){const P=g[g.length-2];m.crST=Math.max(0,(P.t-L.t)/Math.max(yearsBetween(P.d,L.d),0.25))}
+        m.cr=Math.max(m.crLT,m.crST||0,0.01);m.tLast=L.t;m.tDate=L.d;m.series=g;
+        rlAtLast=(L.t-m.tmin)/m.cr;const since=Math.max(0,yearsBetween(L.d,TODAY));
+        m.tEst=r2(L.t-m.cr*since);m.rl=rlAtLast-since;base=L.d;
+        pof=m.rl<2?5:m.rl<5?4:m.rl<10?3:m.rl<20?2:1;
+        m.reasons.push('Remaining life '+fmt(Math.max(m.rl,0),1)+' y at governing rate '+fmt(m.cr,2)+' mm/y → PoF '+pof);
+      }else{pof=3;base=a.inst+'-07-01';m.reasons.push('No thickness data → default PoF 3')}
+    }else{
+      if(m.last&&m.last.grade){pof=m.last.grade;base=m.last.date;m.reasons.push('Last condition grade '+m.last.grade+' ('+tplName(m.last.tpl)+') → PoF '+pof)}
+      else{pof=3;base=a.inst+'-07-01';m.reasons.push('No condition inspection on record → default PoF 3')}
+    }
+    m.openAn=openAn[a.tag]||[];
+    if(m.openAn.some(x=>x.priority==='P1'||x.priority==='P2')){pof=Math.min(5,pof+1);m.reasons.push('Open P1/P2 anomaly → PoF +1')}
+    let risk=DB.settings.matrix[pof-1][m.cof-1];let iv=+DB.settings.intervals[risk];
+    if(m.thick&&rlAtLast!=null){const cap=Math.max(0,Math.floor(rlAtLast*6));if(cap<iv){iv=cap;m.reasons.push('Interval capped at half the remaining life ('+cap+' months)')}}
+    if(CLASS_MAX[a.cls]&&CLASS_MAX[a.cls]<iv){iv=CLASS_MAX[a.cls];m.reasons.push('Interval capped at the '+a.cls+' class maximum ('+iv+' months)')}
+    m.interval=iv;m.base=base;m.due=addMonths(base,iv);m.days=daysBetween(TODAY,m.due);
+    if(m.days<0&&pof<5){pof+=1;m.reasons.push('Inspection overdue → PoF +1 (reduced confidence)');risk=DB.settings.matrix[pof-1][m.cof-1]}
+    m.pof=pof;m.risk=risk;m.status=m.days<0?'Overdue':m.days<=90?'Due ≤ 90 d':'Planned';
+    out[a.tag]=m;
+  });
+  M=out;
+}
+const tplById=id=>DB.settings.templates.find(t=>t.id===id);
+const tplName=id=>(tplById(id)||{name:id}).name;
+const sysById=id=>DB.systems.find(s=>s.id===id)||{name:id,fac:''};
+const facOf=a=>sysById(a.sys).fac;
+const assetBy=tag=>DB.assets.find(a=>a.tag===tag);
+function visibleAssets(){
+  const q=UI.q.trim().toLowerCase();
+  return DB.assets.filter(a=>(UI.fac==='ALL'||facOf(a)===UI.fac)&&(!q||a.tag.toLowerCase().includes(q)||a.desc.toLowerCase().includes(q)));
+}
+const visTags=()=>new Set(visibleAssets().map(a=>a.tag));
+const anDue=a=>addDays(a.raised,PRIORITY[a.priority].days);
+
+/* ---------------- small renderers ---------------- */
+const rb=r=>'<span class="badge r-'+r+'">'+RISK_NAME[r]+'</span>';
+const cb=c=>'<span class="badge c-'+c+'">'+c+'</span>';
+const pb=p=>'<span class="badge p-'+p+'">'+p+'</span>';
+const sb=m=>'<span class="badge '+(m.status==='Overdue'?'s-ov':m.status==='Planned'?'s-ok':'s-due')+'">'+m.status+'</span>';
+const tagLink=t=>'<a href="#" class="mono" data-a="asset" data-tag="'+esc(t)+'">'+esc(t)+'</a>';
+function sortRows(key,rows,cols){
+  const s=UI.sort[key];if(!s)return rows;const col=cols.find(c=>c.h===s.h);if(!col||!col.v)return rows;
+  return rows.slice().sort((a,b)=>{const x=col.v(a),y=col.v(b);return (x<y?-1:x>y?1:0)*s.d});
+}
+function table(key,cols,rows,rowAttr){
+  rows=sortRows(key,rows,cols);const s=UI.sort[key]||{};
+  let h='<div class="tblwrap"><table class="tbl"><thead><tr>'+cols.map(c=>'<th class="'+(c.v?'s ':'')+(c.n?'num':'')+'"'+(c.v?' data-a="sort" data-k="'+key+'" data-h="'+esc(c.h)+'"':'')+'>'+esc(c.h)+(s.h===c.h?(s.d>0?' ▲':' ▼'):'')+'</th>').join('')+'</tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="'+cols.length+'" class="muted" style="text-align:center;padding:24px">No records match the current filters.</td></tr>';
+  rows.forEach(r=>{h+='<tr'+(rowAttr?rowAttr(r):'')+'>'+cols.map(c=>'<td class="'+(c.n?'num':'')+'">'+c.f(r)+'</td>').join('')+'</tr>'});
+  return h+'</tbody></table></div>';
+}
+function matrixHTML(counts,sel,mode){
+  // rows: PoF 5 → 1 ; cols: CoF 1 → 5
+  let h='<div class="mx">';
+  for(let p=5;p>=1;p--){
+    h+='<div class="ax">'+p+'</div>';
+    for(let c=1;c<=5;c++){
+      const lv=DB.settings.matrix[p-1][c-1];const n=counts?counts[p+'-'+c]||0:'';
+      const on=sel&&sel.p===p&&sel.c===c;
+      h+='<div class="cell c'+lv+(on?' sel':'')+'" data-a="'+mode+'" data-p="'+p+'" data-c="'+c+'" title="PoF '+p+' × CoF '+c+' — '+RISK_NAME[lv]+'">'+(mode==='mxedit'?'<span style="font-size:12px">'+lv+'</span>':(n?n:'<span class="z">0</span>'))+'</div>';
+    }
+  }
+  h+='<div></div>'+[1,2,3,4,5].map(c=>'<div class="ax">'+c+'</div>').join('')+'</div>';
+  return h+'<div class="mxlab"><span>↑ Probability of failure (PoF)</span><span>Consequence of failure (CoF) →</span></div>';
+}
+function riskCounts(assets){const c={};assets.forEach(a=>{const m=M[a.tag];c[m.pof+'-'+m.cof]=(c[m.pof+'-'+m.cof]||0)+1});return c}
+
+/* ---------------- views ---------------- */
+const V={};
+V.dashboard=function(){
+  const as=visibleAssets(),tags=new Set(as.map(a=>a.tag));
+  const ms=as.map(a=>M[a.tag]);
+  const open=DB.anomalies.filter(x=>x.status!=='Closed'&&tags.has(x.tag));
+  const k=[
+    [as.length,'Assets in scope',''],
+    [ms.filter(m=>m.crit==='A').length,'Criticality A (safety / production critical)',''],
+    [ms.filter(m=>m.status==='Overdue').length,'Inspections overdue','warn'],
+    [ms.filter(m=>m.status!=='Overdue'&&m.days<=90).length,'Inspections due in 90 days','amb'],
+    [open.length,'Open anomalies ('+open.filter(x=>x.priority==='P1'||x.priority==='P2').length+' P1/P2)',open.some(x=>x.priority==='P1')?'warn':''],
+    [ms.filter(m=>m.risk==='H').length,'High-risk items','warn']];
+  let h='<div class="grid g6">'+k.map(x=>'<div class="card kpi '+x[2]+'"><div class="v">'+x[0]+'</div><div class="l">'+x[1]+'</div></div>').join('')+'</div>';
+  // matrix + anomalies by priority + facility
+  const pr=['P1','P2','P3','P4'].map(p=>[p,open.filter(x=>x.priority===p).length]);const mx=Math.max(1,...pr.map(x=>x[1]));
+  const col={P1:'var(--H)',P2:'var(--MH)',P3:'var(--M)',P4:'#9aa7b3'};
+  h+='<div class="grid g3" style="margin-top:16px">';
+  h+='<div class="card"><h3>Risk matrix<span class="sub">click a cell to open RBI</span></h3>'+matrixHTML(riskCounts(as),null,'mxgo')+'</div>';
+  h+='<div class="card"><h3>Open anomalies by priority</h3>'+pr.map(x=>'<div style="display:grid;grid-template-columns:34px 1fr 30px;gap:10px;align-items:center;margin:10px 0">'+pb(x[0])+'<div class="bar"><i style="width:'+(x[1]/mx*100)+'%;background:'+col[x[0]]+'"></i></div><b class="num">'+x[1]+'</b></div>').join('')+
+     '<h3 style="margin-top:20px">Temporary repairs in service</h3>'+(open.filter(x=>x.temp).map(x=>'<div style="margin:4px 0">'+tagLink(x.tag)+' · '+esc(x.temp.type)+' <span class="muted">— expires '+fd(x.temp.expiry)+'</span></div>').join('')||'<div class="muted">None</div>')+'</div>';
+  const facs=DB.facilities.filter(f=>UI.fac==='ALL'||f.id===UI.fac);
+  h+='<div class="card"><h3>Facilities</h3>'+facs.map(f=>{const fa=as.filter(a=>facOf(a)===f.id);const fm=fa.map(a=>M[a.tag]);
+     const rs=['H','MH','M','L'].map(r=>[r,fm.filter(m=>m.risk===r).length]);const tot=Math.max(1,fa.length);
+     return '<div style="margin-bottom:16px"><b>'+esc(f.name)+'</b> <span class="muted">· '+esc(f.type)+'</span><div class="muted" style="font-size:12.5px;margin:2px 0 6px">'+fa.length+' assets · '+fm.filter(m=>m.status==='Overdue').length+' overdue</div><div style="display:flex;height:12px;border-radius:6px;overflow:hidden">'+rs.map(r=>'<i title="'+RISK_NAME[r[0]]+': '+r[1]+'" style="width:'+(r[1]/tot*100)+'%;background:var(--'+r[0]+')"></i>').join('')+'</div><div class="muted" style="font-size:12px;margin-top:4px">'+rs.map(r=>RISK_NAME[r[0]]+' '+r[1]).join(' · ')+'</div></div>'}).join('')+'</div>';
+  h+='</div>';
+  // lowest RL and upcoming
+  const rl=as.filter(a=>M[a.tag].thick&&M[a.tag].rl!=null).sort((a,b)=>M[a.tag].rl-M[b.tag].rl).slice(0,7);
+  const up=as.slice().sort((a,b)=>M[a.tag].days-M[b.tag].days).slice(0,8);
+  h+='<div class="grid g2" style="margin-top:16px"><div class="card"><h3>Lowest remaining life (thickness-monitored)</h3>'+
+   table('d1',[{h:'Tag',f:a=>tagLink(a.tag)},{h:'Est. t now (mm)',n:1,f:a=>fmt(M[a.tag].tEst,2)},{h:'t min (mm)',n:1,f:a=>fmt(M[a.tag].tmin,2)},{h:'CR (mm/y)',n:1,f:a=>fmt(M[a.tag].cr,2)},{h:'RL (y)',n:1,f:a=>'<b style="color:'+(M[a.tag].rl<5?'var(--H)':'inherit')+'">'+fmt(Math.max(0,M[a.tag].rl),1)+'</b>'},{h:'Risk',f:a=>rb(M[a.tag].risk)}],rl)+'</div>'+
+   '<div class="card"><h3>Next inspections due</h3>'+
+   table('d2',[{h:'Tag',f:a=>tagLink(a.tag)},{h:'Class',f:a=>a.cls},{h:'Due',f:a=>fd(M[a.tag].due)},{h:'Status',f:a=>sb(M[a.tag])},{h:'',f:a=>'<button class="btn sm" data-a="record" data-tag="'+esc(a.tag)+'">Record</button>'}],up)+'</div></div>';
+  return h;
+};
+
+V.assets=function(){
+  let as=visibleAssets();
+  // tree
+  let tr='<div class="tree"><div class="f '+(!UI.sys?'on':'')+'" data-a="tree" data-s="">All systems</div>';
+  DB.facilities.filter(f=>UI.fac==='ALL'||f.id===UI.fac).forEach(f=>{
+    tr+='<div class="f" data-a="tree" data-s="" style="margin-top:6px">'+esc(f.name)+'</div>';
+    DB.systems.filter(s=>s.fac===f.id).forEach(s=>{tr+='<div class="s '+(UI.sys===s.id?'on':'')+'" data-a="tree" data-s="'+s.id+'"><span>'+esc(s.name)+'</span><span class="muted">'+as.filter(a=>a.sys===s.id).length+'</span></div>'});
+  });
+  tr+='</div>';
+  if(UI.sys)as=as.filter(a=>a.sys===UI.sys);
+  if(UI.cls)as=as.filter(a=>a.cls===UI.cls);
+  const cols=[
+    {h:'Tag',v:a=>a.tag,f:a=>'<span class="mono">'+esc(a.tag)+'</span>'},
+    {h:'Description',v:a=>a.desc,f:a=>esc(a.desc)},
+    {h:'Class',v:a=>a.cls,f:a=>'<span title="'+CLASSES[a.cls]+'">'+a.cls+'</span>'},
+    {h:'Fluid',v:a=>a.fluid,f:a=>esc(a.fluid)},
+    {h:'Material',v:a=>a.mat,f:a=>esc(a.mat)},
+    {h:'Crit.',v:a=>M[a.tag].crit,f:a=>cb(M[a.tag].crit)+(M[a.tag].sce?' <span class="badge s-ok" title="Safety-critical element">SCE</span>':'')},
+    {h:'Risk',v:a=>'LMMHH'.indexOf(M[a.tag].risk)+(M[a.tag].risk==='H'?9:0),f:a=>rb(M[a.tag].risk)},
+    {h:'Next due',v:a=>M[a.tag].due,f:a=>fd(M[a.tag].due)}];
+  return '<div class="grid split" style="grid-template-columns:260px 1fr;align-items:start"><div class="card">'+tr+'<div style="margin-top:14px"><button class="btn sm" data-a="add-system">+ Add system</button></div></div><div>'+
+   '<div class="toolbar"><select data-a="cls-filter"><option value="">All classes</option>'+Object.entries(CLASSES).map(([k,v])=>'<option value="'+k+'"'+(UI.cls===k?' selected':'')+'>'+k+' — '+v+'</option>').join('')+'</select><span class="muted">'+as.length+' assets</span><span class="sp"></span><button class="btn" data-a="copy-assets">Copy as CSV</button><button class="btn pri" data-a="add-asset">+ Add asset</button></div>'+
+   table('assets',cols,as,a=>' class="click" data-a="asset" data-tag="'+esc(a.tag)+'"')+'</div></div>';
+};
+
+V.inspections=function(){
+  const tags=visTags();
+  let h='<div class="tabs"><button class="'+(UI.insTab==='schedule'?'on':'')+'" data-a="instab" data-t="schedule">Inspection schedule</button><button class="'+(UI.insTab==='history'?'on':'')+'" data-a="instab" data-t="history">Inspection history</button></div>';
+  if(UI.insTab==='schedule'){
+    const as=visibleAssets().slice().sort((a,b)=>M[a.tag].days-M[b.tag].days);
+    h+='<p class="hint">Due dates come from the RBI interval for each asset’s risk level, capped at half the remaining life for thickness-monitored items. Change intervals in Configuration.</p>';
+    h+=table('sched',[
+      {h:'Tag',v:a=>a.tag,f:a=>tagLink(a.tag)},{h:'Description',f:a=>esc(a.desc)},
+      {h:'Template',f:a=>esc(tplName(M[a.tag].thick?'UT':(CLS_TPL[a.cls]||'GVI')))},
+      {h:'Last',v:a=>M[a.tag].base,f:a=>fd(M[a.tag].last?M[a.tag].base:null)},
+      {h:'Risk',v:a=>'LMMHH'.indexOf(M[a.tag].risk),f:a=>rb(M[a.tag].risk)},
+      {h:'Interval (mo)',n:1,v:a=>M[a.tag].interval,f:a=>M[a.tag].interval},
+      {h:'Due',v:a=>M[a.tag].due,f:a=>fd(M[a.tag].due)},
+      {h:'Status',v:a=>M[a.tag].days,f:a=>sb(M[a.tag])},
+      {h:'',f:a=>'<button class="btn sm pri" data-a="record" data-tag="'+esc(a.tag)+'">Record</button>'}],as);
+  }else{
+    const ins=DB.inspections.filter(i=>tags.has(i.tag)).slice().sort((a,b)=>a.date<b.date?1:-1);
+    h+=table('hist',[
+      {h:'ID',f:i=>'<span class="mono">'+i.id+'</span>'},{h:'Date',v:i=>i.date,f:i=>fd(i.date)},{h:'Tag',v:i=>i.tag,f:i=>tagLink(i.tag)},
+      {h:'Template',v:i=>i.tpl,f:i=>esc(tplName(i.tpl))},{h:'Result',f:i=>resultText(i)},
+      {h:'Grade',n:1,v:i=>i.grade||0,f:i=>i.grade?gradeBadge(i.grade):'—'},{h:'Inspector',f:i=>esc(i.inspector)}],ins,i=>' class="click" data-a="insview" data-id="'+i.id+'"');
+  }
+  return h;
+};
+const gradeBadge=g=>'<span class="badge '+(['','r-L','r-M','r-MH','r-H'][g])+'">'+g+'</span>';
+function resultText(i){
+  if(i.readings&&i.readings.length){const mn=Math.min(...i.readings.map(r=>+r.t));return 'Min '+fmt(mn,2)+' mm over '+i.readings.length+' CMLs'}
+  const t=tplById(i.tpl);const bits=[];
+  if(t)t.fields.forEach(f=>{if(f.t==='pf'&&i.data[f.k]==='Fail')bits.push('Fail: '+f.l)});
+  if(i.tpl==='PSV')bits.unshift('Pop '+i.data.pop+' / set '+i.data.set+' barg');
+  if(i.data.notes)bits.push(i.data.notes);
+  return esc(bits.join(' · ')||'No findings');
+}
+
+V.anomalies=function(){
+  const tags=visTags();
+  let an=DB.anomalies.filter(x=>tags.has(x.tag));
+  if(UI.anStatus==='Open+')an=an.filter(x=>x.status!=='Closed');else if(UI.anStatus)an=an.filter(x=>x.status===UI.anStatus);
+  if(UI.anPri)an=an.filter(x=>x.priority===UI.anPri);
+  const opt=(v,l,cur)=>'<option value="'+v+'"'+(cur===v?' selected':'')+'>'+l+'</option>';
+  let h='<div class="toolbar"><select data-a="an-status">'+opt('Open+','Open & in progress',UI.anStatus)+opt('','All statuses',UI.anStatus)+opt('Open','Open',UI.anStatus)+opt('In progress','In progress',UI.anStatus)+opt('Closed','Closed',UI.anStatus)+'</select>'+
+    '<select data-a="an-pri">'+opt('','All priorities',UI.anPri)+['P1','P2','P3','P4'].map(p=>opt(p,PRIORITY[p].label,UI.anPri)).join('')+'</select><span class="muted">'+an.length+' anomalies</span><span class="sp"></span><button class="btn pri" data-a="raise">+ Raise anomaly</button></div>';
+  h+=table('an',[
+    {h:'ID',v:x=>x.id,f:x=>'<span class="mono">'+x.id+'</span>'},{h:'Tag',v:x=>x.tag,f:x=>tagLink(x.tag)},{h:'Title',f:x=>esc(x.title)},
+    {h:'Priority',v:x=>x.priority,f:x=>pb(x.priority)},{h:'Status',v:x=>x.status,f:x=>esc(x.status)},
+    {h:'Target date',v:x=>anDue(x),f:x=>{const d=anDue(x);return x.status!=='Closed'&&d<TODAY?'<b style="color:var(--H)">'+fd(d)+'</b>':fd(d)}},
+    {h:'Actions',n:1,f:x=>x.actions.filter(a=>a.done).length+'/'+x.actions.length},
+    {h:'Temp. repair',f:x=>x.temp?esc(x.temp.type):'—'},{h:'Owner',f:x=>esc(x.owner)}],an,x=>' class="click" data-a="anview" data-id="'+x.id+'"');
+  return h;
+};
+
+V.rbi=function(){
+  let as=visibleAssets();const counts=riskCounts(as);
+  if(UI.mx)as=as.filter(a=>M[a.tag].pof===UI.mx.p&&M[a.tag].cof===UI.mx.c);
+  const lib=DB.settings.strategies;
+  let h='<div class="grid split" style="grid-template-columns:340px 1fr;align-items:start"><div><div class="card"><h3>Risk matrix</h3>'+matrixHTML(counts,UI.mx,'mxsel')+
+   (UI.mx?'<div style="margin-top:10px"><button class="btn sm" data-a="mxclear">Clear filter (PoF '+UI.mx.p+' × CoF '+UI.mx.c+')</button></div>':'')+'</div>'+
+   '<div class="card" style="margin-top:16px"><h3>Method</h3><div class="hint" style="margin:0">Semi-quantitative RBI.<br><b>PoF</b> for thickness-monitored items comes from remaining life (RL = (t − t<sub>min</sub>) / CR, using the higher of the long- and short-term corrosion rates): ≥20 y→1, 10–20→2, 5–10→3, 2–5→4, &lt;2→5. For other items it comes from the latest condition grade. Open P1/P2 anomalies and overdue inspections each add 1.<br><b>CoF</b> is the highest of the safety, environment and production consequence ratings set under Criticality.<br><b>Interval</b>: '+
+   Object.entries(DB.settings.intervals).map(([k,v])=>RISK_NAME[k]+' '+v+' mo').join(', ')+', capped at half the remaining life.<br>t<sub>min</sub> is the pressure-design thickness (ASME B31.3 straight pipe or a cylindrical-shell formula), with a minimum structural thickness applied.</div></div></div>';
+  h+='<div>'+table('rbi',[
+    {h:'Tag',v:a=>a.tag,f:a=>tagLink(a.tag)},{h:'Class',v:a=>a.cls,f:a=>a.cls},
+    {h:'Damage mechanisms',f:a=>esc(a.dms.join(', '))},
+    {h:'CR (mm/y)',n:1,v:a=>M[a.tag].cr||0,f:a=>fmt(M[a.tag].cr,2)},
+    {h:'RL (y)',n:1,v:a=>M[a.tag].rl==null?999:M[a.tag].rl,f:a=>M[a.tag].rl==null?'—':fmt(Math.max(0,M[a.tag].rl),1)},
+    {h:'PoF',n:1,v:a=>M[a.tag].pof,f:a=>M[a.tag].pof},{h:'CoF',n:1,v:a=>M[a.tag].cof,f:a=>M[a.tag].cof},
+    {h:'Risk',v:a=>M[a.tag].pof*M[a.tag].cof,f:a=>rb(M[a.tag].risk)},
+    {h:'Interval (mo)',n:1,v:a=>M[a.tag].interval,f:a=>M[a.tag].interval},
+    {h:'Next due',v:a=>M[a.tag].due,f:a=>fd(M[a.tag].due)},
+    {h:'Recommended RBI method',f:a=>esc([...new Set(lib.filter(s=>s.cls===a.cls&&s.interval==='RBI'&&(a.cls!=='RISER'||s.method!=='UT'||M[a.tag].thick)).map(s=>s.method))].join(', ')||tplName(CLS_TPL[a.cls]||'GVI'))}
+  ],as,a=>' class="click" data-a="asset" data-tag="'+esc(a.tag)+'"')+'</div></div>';
+  return h;
+};
+
+V.criticality=function(){
+  const as=visibleAssets();
+  const lvl=(a,k)=>'<select data-a="crit" data-tag="'+esc(a.tag)+'" data-k="'+k+'">'+[1,2,3,4,5].map(n=>'<option'+(a.crit[k]===n?' selected':'')+'>'+n+'</option>').join('')+'</select>';
+  let h='<div class="card" style="margin-bottom:16px"><h3>Consequence rating scale</h3><div class="tblwrap"><table class="tbl"><thead><tr><th>Rating</th><th>Safety (S)</th><th>Environment (E)</th><th>Production (P)</th></tr></thead><tbody>'+
+   [0,1,2,3,4].map(i=>'<tr><td><b>'+(i+1)+'</b></td><td>'+CONS_DESC.s[i]+'</td><td>'+CONS_DESC.e[i]+'</td><td>'+CONS_DESC.p[i]+'</td></tr>').join('')+'</tbody></table></div>'+
+   '<p class="hint" style="margin-bottom:0">Criticality: <b>A</b> if any rating ≥ 4, <b>B</b> if the highest is 3, otherwise <b>C</b>. Items with safety ≥ 4 are flagged as safety-critical elements (SCE). The highest rating is the CoF used in RBI.</p></div>';
+  // system summary
+  const sys=DB.systems.filter(s=>UI.fac==='ALL'||s.fac===UI.fac);
+  h+='<div class="grid g2" style="align-items:start"><div class="card"><h3>Functional systems</h3>'+table('sys',[
+    {h:'System',f:s=>esc(s.name)},{h:'Assets',n:1,f:s=>as.filter(a=>a.sys===s.id).length},
+    {h:'A',n:1,f:s=>as.filter(a=>a.sys===s.id&&M[a.tag].crit==='A').length},{h:'B',n:1,f:s=>as.filter(a=>a.sys===s.id&&M[a.tag].crit==='B').length},
+    {h:'C',n:1,f:s=>as.filter(a=>a.sys===s.id&&M[a.tag].crit==='C').length},{h:'SCE',n:1,f:s=>as.filter(a=>a.sys===s.id&&M[a.tag].sce).length}],sys)+'</div>'+
+   '<div class="card"><h3>Rule-based defaults by service</h3><p class="hint">New assets get these ratings automatically. You can override them per asset below.</p>'+table('fc',[{h:'Fluid / service',f:r=>esc(r[0])},{h:'S',n:1,f:r=>r[1][0]},{h:'E',n:1,f:r=>r[1][1]},{h:'P',n:1,f:r=>r[1][2]}],Object.entries(FLUID_CRIT))+
+   '<div style="margin-top:10px"><button class="btn" data-a="crit-defaults">Re-apply defaults to all assets in scope</button></div></div></div>';
+  h+='<h3 style="margin:22px 0 10px;font-size:15px">Asset criticality</h3>'+table('crit',[
+    {h:'Tag',v:a=>a.tag,f:a=>tagLink(a.tag)},{h:'Description',f:a=>esc(a.desc)},{h:'Fluid',v:a=>a.fluid,f:a=>esc(a.fluid)},
+    {h:'S',f:a=>lvl(a,'s')},{h:'E',f:a=>lvl(a,'e')},{h:'P',f:a=>lvl(a,'p')},
+    {h:'Criticality',v:a=>M[a.tag].crit,f:a=>cb(M[a.tag].crit)},{h:'SCE',v:a=>M[a.tag].sce?1:0,f:a=>M[a.tag].sce?'Yes':'—'}],as);
+  return h;
+};
+
+V.strategy=function(){
+  const lib=DB.settings.strategies,rows=lib.map((s,i)=>Object.assign({i},s)).filter(s=>s.cls===UI.stratCls);
+  const n=visibleAssets().filter(a=>a.cls===UI.stratCls).length;
+  let h='<div class="toolbar"><select data-a="strat-cls">'+Object.entries(CLASSES).map(([k,v])=>'<option value="'+k+'"'+(UI.stratCls===k?' selected':'')+'>'+k+' — '+v+'</option>').join('')+'</select><span class="muted">'+rows.length+' failure modes · applies to '+n+' assets in scope</span><span class="sp"></span><button class="btn" data-a="strat-doc">Generate strategy document</button><button class="btn pri" data-a="strat-add">+ Add failure mode</button></div>';
+  h+='<p class="hint">FMEA-based strategy library. Tasks marked RBI take their interval from the risk assessment; the rest use fixed intervals.</p>';
+  h+=table('strat',[{h:'Failure mode',f:s=>esc(s.mode)},{h:'Mechanism',f:s=>esc(s.mech)},{h:'Effect',f:s=>esc(s.effect)},{h:'Task',f:s=>esc(s.task)},{h:'Method',f:s=>esc(s.method)},
+    {h:'Interval',f:s=>s.interval==='RBI'?'<span class="badge s-due">RBI</span>':s.interval+' mo'},{h:'Discipline',f:s=>esc(s.disc)},{h:'',f:s=>'<button class="btn sm danger" data-a="strat-del" data-i="'+s.i+'">Remove</button>'}],rows);
+  // late life
+  h+='<div class="card" style="margin-top:16px"><h3>Late-life review candidates</h3><p class="hint">Assets in this class with less than 10 years remaining life, or an open P1/P2 anomaly. Consider repair, replacement or derating.</p>'+
+   (visibleAssets().filter(a=>a.cls===UI.stratCls&&((M[a.tag].rl!=null&&M[a.tag].rl<10)||M[a.tag].openAn.some(x=>x.priority<='P2'))).map(a=>'<div style="margin:4px 0">'+tagLink(a.tag)+' — '+esc(a.desc)+' <span class="muted">'+(M[a.tag].rl!=null?'RL '+fmt(Math.max(0,M[a.tag].rl),1)+' y':'')+(M[a.tag].openAn.length?' · '+M[a.tag].openAn.length+' open anomaly':'')+'</span></div>').join('')||'<div class="muted">None in scope.</div>')+'</div>';
+  return h;
+};
+
+V.materials=function(){
+  const tags=visTags();
+  const mats=DB.materials.filter(m=>UI.fac==='ALL'||m.tags.some(t=>tags.has(t)));
+  let h='<div class="toolbar"><span class="muted">'+mats.length+' catalogue items · '+mats.filter(m=>m.stock<m.min).length+' below minimum stock</span><span class="sp"></span><button class="btn pri" data-a="mat-add">+ Add item</button></div>';
+  h+=table('mat',[{h:'Code',v:m=>m.code,f:m=>'<span class="mono">'+m.code+'</span>'},{h:'Description',v:m=>m.desc,f:m=>esc(m.desc)},{h:'Category',v:m=>m.cat,f:m=>esc(m.cat)},
+    {h:'Spares criticality',v:m=>m.crit,f:m=>esc(m.crit)},{h:'Stock',n:1,v:m=>m.stock,f:m=>'<b style="color:'+(m.stock<m.min?'var(--H)':'inherit')+'">'+m.stock+'</b>'},{h:'Min',n:1,v:m=>m.min,f:m=>m.min},
+    {h:'Status',v:m=>m.stock<m.min?0:1,f:m=>m.stock<m.min?'<span class="badge s-ov">Reorder</span>':'<span class="badge s-ok">OK</span>'},
+    {h:'Where used (BoM)',f:m=>m.tags.map(t=>'<span class="chip" data-a="asset" data-tag="'+esc(t)+'">'+esc(t)+'</span>').join('')},
+    {h:'',f:m=>'<button class="btn sm" data-a="mat-edit" data-code="'+m.code+'">Edit</button>'}],mats);
+  return h;
+};
+
+V.documents=function(){
+  const tags=visTags();const types=[...new Set(DB.documents.map(d=>d.type))].sort();
+  let docs=DB.documents.filter(d=>(UI.fac==='ALL'||!d.tags.length&&d.no.startsWith(UI.fac)||d.tags.some(t=>tags.has(t))));
+  if(UI.docType)docs=docs.filter(d=>d.type===UI.docType);
+  const q=UI.q.trim().toLowerCase();if(q)docs=docs.filter(d=>d.no.toLowerCase().includes(q)||d.title.toLowerCase().includes(q)||d.tags.some(t=>t.toLowerCase().includes(q)));
+  let h='<div class="toolbar"><select data-a="doc-type"><option value="">All document types</option>'+types.map(t=>'<option'+(UI.docType===t?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select><span class="muted">'+docs.length+' documents</span><span class="sp"></span><button class="btn pri" data-a="doc-add">+ Register document</button></div>';
+  h+='<p class="hint">Metadata register with tag links. In a full system, files would be stored and versioned here. Inspection reports are created automatically from inspection records.</p>';
+  h+=table('docs',[{h:'Document no.',v:d=>d.no,f:d=>'<span class="mono">'+esc(d.no)+'</span>'},{h:'Title',v:d=>d.title,f:d=>esc(d.title)},{h:'Type',v:d=>d.type,f:d=>esc(d.type)},{h:'Rev',f:d=>esc(d.rev)},
+    {h:'Linked tags',f:d=>{const t=d.tags.slice(0,6).map(t=>'<span class="chip" data-a="asset" data-tag="'+esc(t)+'">'+esc(t)+'</span>').join('');return t+(d.tags.length>6?' <span class="muted">+'+(d.tags.length-6)+' more</span>':'')}}],docs);
+  return h;
+};
+
+V.config=function(){
+  const S=DB.settings;
+  let h='<div class="grid g2" style="align-items:start"><div class="card"><h3>Risk matrix<span class="sub">click a cell to change its level</span></h3>'+matrixHTML(null,null,'mxedit')+'</div>';
+  h+='<div class="card"><h3>Maximum inspection interval by risk (months)</h3><div class="frm">'+Object.keys(S.intervals).map(k=>'<label>'+RISK_NAME[k]+'<input type="number" min="1" max="240" value="'+S.intervals[k]+'" data-a="interval" data-k="'+k+'"></label>').join('')+'</div>'+
+   '<h3 style="margin-top:20px">Allowable stress by material (MPa)</h3><p class="hint">Used for the minimum required thickness calculation.</p><div class="frm">'+Object.keys(S.stress).map(k=>'<label>'+esc(k)+'<input type="number" min="10" max="600" value="'+S.stress[k]+'" data-a="stress" data-k="'+esc(k)+'"></label>').join('')+'</div></div></div>';
+  h+='<div class="card" style="margin-top:16px"><h3>Inspection templates</h3><p class="hint">Add fields to any template. New fields appear on the inspection form at once. A Pass/Fail field set to Fail raises the condition grade to at least 3.</p>'+
+   S.templates.map((t,ti)=>'<details style="border-top:1px solid var(--line);padding:8px 0"><summary><b>'+esc(t.name)+'</b> <span class="muted">· '+t.fields.length+' fields · applies to '+t.classes.join(', ')+'</span></summary><div style="padding:8px 0 4px 16px">'+
+     t.fields.map(f=>'<div style="margin:3px 0">'+esc(f.l)+' <span class="muted">('+({cml:'CML readings',grade:'grade 1–4',select:'choice',num:'number',pf:'pass/fail',text:'text',textarea:'text'}[f.t])+')</span></div>').join('')+
+     '<div class="toolbar" style="margin-top:8px"><input placeholder="New field label" id="nf-'+ti+'" style="width:240px"><select id="nt-'+ti+'"><option value="pf">Pass / fail</option><option value="num">Number</option><option value="text">Text</option></select><button class="btn sm" data-a="tpl-field" data-i="'+ti+'">Add field</button></div></div></details>').join('')+'</div>';
+  h+='<div class="card" style="margin-top:16px"><h3>Demo data</h3><p class="hint">Your changes are kept in this browser. Reset to restore the original sample data.</p><button class="btn danger" data-a="reset">Reset demo data</button> <button class="btn" data-a="copy-json">Copy all data as JSON</button></div>';
+  return h;
+};
+
+/* ---------------- asset drawer ---------------- */
+function trendSVG(a,m){
+  if(!m.series||!m.series.length)return '';
+  const W=600,H=220,pl=46,pr=14,pt=14,pb=30;
+  const x0=a.inst,lastY=pd(m.tDate).getFullYear()+pd(m.tDate).getMonth()/12;
+  let endY=Math.max(pd(TODAY).getFullYear()+1,lastY+1);const hitY=m.cr>0?lastY+(m.tLast-m.tmin)/m.cr:null;
+  if(hitY&&hitY<endY+15)endY=Math.max(endY,Math.min(hitY+1,lastY+25));
+  const y0=Math.max(0,m.tmin-1),y1=a.tnom+0.5;
+  const X=v=>pl+(v-x0)/(endY-x0)*(W-pl-pr),Y=v=>pt+(1-(v-y0)/(y1-y0))*(H-pt-pb);
+  const yr=d=>{const q=pd(d);return q.getFullYear()+q.getMonth()/12+q.getDate()/365};
+  const pts=[[x0+0.5,a.tnom]].concat(m.series.map(s=>[yr(s.d),s.t]));
+  let s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;font-family:IBM Plex Sans;font-size:11px">';
+  for(let i=0;i<=4;i++){const v=y0+(y1-y0)*i/4;s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#eef1f4"/><text x="'+(pl-6)+'" y="'+(Y(v)+4)+'" text-anchor="end" fill="#5d6b78">'+v.toFixed(1)+'</text>'}
+  const step=Math.max(1,Math.ceil((endY-x0)/8));for(let y=Math.ceil(x0);y<=endY;y+=step)s+='<text x="'+X(y)+'" y="'+(H-10)+'" text-anchor="middle" fill="#5d6b78">'+y+'</text>';
+  s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(m.tmin)+'" y2="'+Y(m.tmin)+'" stroke="#d0342c" stroke-dasharray="5 4"/><text x="'+(pl+6)+'" y="'+(Y(m.tmin)-5)+'" fill="#d0342c">t min '+m.tmin.toFixed(2)+' mm</text>';
+  const tx=X(yr(TODAY));s+='<line x1="'+tx+'" x2="'+tx+'" y1="'+pt+'" y2="'+(H-pb)+'" stroke="#9aa7b3" stroke-dasharray="2 3"/><text x="'+(tx+4)+'" y="'+(pt+10)+'" fill="#5d6b78">today</text>';
+  if(hitY){const ex=Math.min(hitY,endY);s+='<line x1="'+X(pts[pts.length-1][0])+'" y1="'+Y(m.tLast)+'" x2="'+X(ex)+'" y2="'+Y(m.tLast-m.cr*(ex-pts[pts.length-1][0]))+'" stroke="#ec7a1c" stroke-width="2" stroke-dasharray="6 4"/>'}
+  s+='<polyline fill="none" stroke="#0b7a8a" stroke-width="2" points="'+pts.map(p=>X(p[0])+','+Y(p[1])).join(' ')+'"/>';
+  pts.forEach((p,i)=>{s+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="4" fill="'+(i?'#0b7a8a':'#fff')+'" stroke="#0b7a8a" stroke-width="2"><title>'+(i?'Governing min ':'Nominal ')+p[1].toFixed(2)+' mm</title></circle>'});
+  return s+'</svg><div class="muted" style="font-size:12px">Governing minimum thickness per survey (teal) and projection at the governing corrosion rate (orange) to t<sub>min</sub>.</div>';
+}
+function openAsset(tag){
+  const a=assetBy(tag);if(!a)return;const m=M[tag];
+  const kv=(l,v)=>'<div><span>'+l+'</span>'+v+'</div>';
+  let h='<div class="dhead"><button class="x" data-a="close-drawer" aria-label="Close">×</button><div class="mono muted">'+esc(sysById(a.sys).name)+'</div><h2>'+esc(a.tag)+' — '+esc(a.desc)+'</h2><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+cb(m.crit)+(m.sce?'<span class="badge s-ok">SCE</span>':'')+rb(m.risk)+sb(m)+'<span class="sp" style="flex:1"></span><button class="btn sm pri" data-a="record" data-tag="'+esc(tag)+'">Record inspection</button><button class="btn sm" data-a="raise" data-tag="'+esc(tag)+'">Raise anomaly</button><button class="btn sm" data-a="edit-asset" data-tag="'+esc(tag)+'">Edit</button></div></div><div class="dbody">';
+  h+='<h4>Attributes</h4><div class="kv">'+kv('Class',CLASSES[a.cls])+kv('Fluid / service',esc(a.fluid))+kv('Material',esc(a.mat))+
+     kv('Design pressure',a.dp?a.dp+' barg':'—')+kv('Design temperature',a.dt?a.dt+' °C':'—')+kv('Installed',a.inst)+
+     (m.thick?kv('Outside diameter',a.od+' mm')+kv('Nominal thickness',a.tnom+' mm')+kv('Required t<sub>min</sub>',m.tmin+' mm'):'')+
+     kv('Damage mechanisms',esc(a.dms.join(', ')))+kv('Consequence S / E / P',a.crit.s+' / '+a.crit.e+' / '+a.crit.p)+'</div>';
+  h+='<h4>RBI assessment</h4><div class="kv">'+kv('PoF',m.pof)+kv('CoF',m.cof)+kv('Risk',rb(m.risk))+kv('Interval',m.interval+' months')+kv('Next inspection due',fd(m.due))+
+     (m.thick&&m.cr!=null?kv('Corrosion rate LT / ST',fmt(m.crLT,2)+' / '+(m.crST!=null?fmt(m.crST,2):'—')+' mm/y')+kv('Last measured / est. now',fmt(m.tLast,2)+' / '+fmt(m.tEst,2)+' mm')+kv('Remaining life',fmt(Math.max(0,m.rl),1)+' years'):'')+
+     '</div><ul class="reasons muted">'+m.reasons.map(r=>'<li>'+esc(r)+'</li>').join('')+'</ul>';
+  if(m.thick&&m.series)h+='<h4>Thickness trend</h4>'+trendSVG(a,m);
+  h+='<h4>Inspection history</h4>'+(m.ins.length?table('dins',[{h:'Date',f:i=>fd(i.date)},{h:'Template',f:i=>esc(tplName(i.tpl))},{h:'Result',f:i=>resultText(i)},{h:'Grade',f:i=>i.grade?gradeBadge(i.grade):'—'}],m.ins.slice().reverse(),i=>' class="click" data-a="insview" data-id="'+i.id+'"'):'<div class="muted">No inspections recorded.</div>');
+  const ans=DB.anomalies.filter(x=>x.tag===tag);
+  h+='<h4>Anomalies</h4>'+(ans.length?table('dan',[{h:'ID',f:x=>'<span class="mono">'+x.id+'</span>'},{h:'Title',f:x=>esc(x.title)},{h:'Priority',f:x=>pb(x.priority)},{h:'Status',f:x=>esc(x.status)}],ans,x=>' class="click" data-a="anview" data-id="'+x.id+'"'):'<div class="muted">None.</div>');
+  const st=DB.settings.strategies.filter(s=>s.cls===a.cls);
+  h+='<h4>Maintenance & inspection tasks</h4>'+table('dst',[{h:'Task',f:s=>esc(s.task)},{h:'Method',f:s=>esc(s.method)},{h:'Interval',f:s=>s.interval==='RBI'?m.interval+' mo (RBI)':s.interval+' mo'}],st);
+  const sp=DB.materials.filter(x=>x.tags.includes(tag));
+  h+='<h4>Spares (BoM)</h4>'+(sp.length?sp.map(x=>'<div><span class="mono">'+x.code+'</span> '+esc(x.desc)+' <span class="muted">· stock '+x.stock+' / min '+x.min+'</span>'+(x.stock<x.min?' <span class="badge s-ov">Reorder</span>':'')+'</div>').join(''):'<div class="muted">No spares linked.</div>');
+  const docs=DB.documents.filter(d=>d.tags.includes(tag));
+  h+='<h4>Documents</h4>'+(docs.length?docs.map(d=>'<div><span class="mono">'+esc(d.no)+'</span> '+esc(d.title)+' <span class="muted">· '+esc(d.type)+' rev '+esc(d.rev)+'</span></div>').join(''):'<div class="muted">None linked.</div>');
+  h+='</div>';
+  $('#drawer').innerHTML=h;$('#drawer').classList.add('on');$('#scrim').classList.add('on');$('#drawer').scrollTop=0;UI.drawer=tag;
+}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#scrim').classList.remove('on');UI.drawer=null}
+
+/* ---------------- modals ---------------- */
+function openModal(title,body,foot){
+  $('#modal').innerHTML='<div class="mh">'+esc(title)+'<button class="x" data-a="close-modal" aria-label="Close" style="top:10px">×</button></div><div class="mb">'+body+'</div>'+(foot?'<div class="mf">'+foot+'</div>':'');
+  $('#modal').classList.add('on');$('#mscrim').classList.add('on');
+  const f=$('#modal').querySelector('input,select,textarea');if(f)try{f.focus()}catch(e){}
+}
+function closeModal(){$('#modal').classList.remove('on');$('#mscrim').classList.remove('on')}
+const val=id=>{const e=document.getElementById(id);return e?e.value:''};
+
+function recordForm(tag,tplId){
+  const a=assetBy(tag),m=M[tag];
+  const tpls=DB.settings.templates.filter(t=>t.classes.includes(a.cls));
+  tplId=tplId||(m.thick?'UT':(CLS_TPL[a.cls]||'GVI'));if(!tpls.find(t=>t.id===tplId))tplId=tpls[0].id;
+  const tpl=tplById(tplId);
+  let b='<div class="frm"><label>Asset<input value="'+esc(tag+' — '+a.desc)+'" disabled></label><label>Template<select id="r-tpl" data-a="rec-tpl" data-tag="'+esc(tag)+'">'+tpls.map(t=>'<option value="'+t.id+'"'+(t.id===tplId?' selected':'')+'>'+esc(t.name)+'</option>').join('')+'</select></label>'+
+    '<label>Inspection date<input type="date" id="r-date" value="'+TODAY+'" max="'+TODAY+'"></label><label>Inspector<input id="r-insp" value="'+INSPECTORS[0]+'"></label>';
+  tpl.fields.forEach((f,fi)=>{
+    const id='rf-'+fi;
+    if(f.t==='cml'){
+      const lastUT=m.ins.filter(i=>i.readings).slice(-1)[0];const cmls=lastUT?lastUT.readings:[{cml:'CML-01'},{cml:'CML-02'},{cml:'CML-03'}];
+      b+='<div class="w" style="grid-column:1/-1"><div style="font-size:12.5px;color:var(--muted);margin-bottom:4px">'+esc(f.l)+(m.thick?' · t<sub>min</sub> = '+m.tmin+' mm':'')+'</div><table class="tbl" id="cmltbl"><thead><tr><th>CML</th><th>Previous (mm)</th><th>Reading (mm)</th></tr></thead><tbody>'+
+        cmls.map(c=>'<tr><td><input class="cml-id" value="'+esc(c.cml)+'" style="width:110px"></td><td class="muted">'+(c.t!=null?fmt(c.t,2):'—')+'</td><td><input class="cml-t" type="number" step="0.01" min="0" placeholder="mm"></td></tr>').join('')+
+        '</tbody></table><button class="btn sm" data-a="cml-add" style="margin-top:6px">+ Add CML</button></div>';
+    }else if(f.t==='grade')b+='<label>'+esc(f.l)+'<select id="'+id+'"><option value="1">1 — Good</option><option value="2">2 — Fair, minor defects</option><option value="3">3 — Poor, repair needed</option><option value="4">4 — Bad, immediate action</option></select></label>';
+    else if(f.t==='select')b+='<label>'+esc(f.l)+'<select id="'+id+'">'+f.o.map(o=>'<option>'+esc(o)+'</option>').join('')+'</select></label>';
+    else if(f.t==='num')b+='<label>'+esc(f.l)+'<input type="number" step="any" id="'+id+'" value="'+(f.k==='set'?a.dp:'')+'"></label>';
+    else if(f.t==='pf')b+='<label>'+esc(f.l)+'<select id="'+id+'"><option>Pass</option><option>Fail</option><option>N/A</option></select></label>';
+    else if(f.t==='textarea')b+='<label class="w">'+esc(f.l)+'<textarea id="'+id+'"></textarea></label>';
+    else b+='<label>'+esc(f.l)+'<input id="'+id+'"></label>';
+  });
+  b+='</div>';
+  openModal('Record inspection',b,'<button class="btn" data-a="close-modal">Cancel</button><button class="btn pri" data-a="rec-save" data-tag="'+esc(tag)+'" data-tpl="'+tplId+'">Save inspection</button>');
+}
+function saveRecord(tag,tplId){
+  const tpl=tplById(tplId),a=assetBy(tag);const data={};let readings=null;
+  for(const [fi,f] of tpl.fields.entries()){
+    if(f.t==='cml'){
+      readings=[];const ids=[...document.querySelectorAll('#cmltbl .cml-id')],ts=[...document.querySelectorAll('#cmltbl .cml-t')];
+      ids.forEach((e,i)=>{const t=parseFloat(ts[i].value);if(e.value.trim()&&!isNaN(t))readings.push({cml:e.value.trim(),t:r2(t)})});
+      if(!readings.length){toast('Enter at least one thickness reading');return}
+      if(readings.some(r=>r.t<=0||r.t>a.tnom*1.5)){toast('Check readings: values must be between 0 and 1.5 × nominal');return}
+    }else{let v=val('rf-'+fi);if(f.t==='num'||f.t==='grade')v=v===''?null:+v;data[f.k]=v}
+  }
+  const date=val('r-date')||TODAY;if(date>TODAY){toast('Inspection date cannot be in the future');return}
+  const ids=DB.inspections.map(i=>+i.id.split('-')[1]);const id='IR-'+pad(Math.max(0,...ids)+1,4);
+  const rec={id,tag,date,tpl:tplId,inspector:val('r-insp')||'—',readings,data,grade:gradeFor(tpl,data)};
+  DB.inspections.push(rec);
+  DB.documents.push({no:id+'-RPT',title:'Inspection report — '+tpl.name+' — '+tag,type:'Inspection report',rev:'0',tags:[tag]});
+  save();computeAll();
+  const m=M[tag];const finds=[];
+  if(readings){if(m.tLast<m.tmin)finds.push('Measured thickness '+m.tLast+' mm is below t min ('+m.tmin+' mm).');else if(m.rl<5)finds.push('Remaining life is '+fmt(Math.max(0,m.rl),1)+' years.');}
+  if(rec.grade>=3)finds.push('Condition grade '+rec.grade+'.');
+  const sum='<p><b>'+id+'</b> saved for '+esc(tag)+'.</p><div class="kv"><div><span>Risk now</span>'+rb(m.risk)+'</div><div><span>Next due</span>'+fd(m.due)+'</div>'+(readings?'<div><span>Remaining life</span>'+fmt(Math.max(0,m.rl),1)+' y</div>':'<div><span>Grade</span>'+gradeBadge(rec.grade)+'</div>')+'</div>';
+  if(finds.length){
+    const pri=(readings&&m.tLast<m.tmin)||rec.grade===4?'P1':(m.rl!=null&&m.rl<2)?'P1':'P2';
+    openModal('Inspection saved — finding detected',sum+'<p style="margin-top:14px;color:var(--H)"><b>Finding:</b> '+esc(finds.join(' '))+'</p><p class="hint">Raise an anomaly to track the actions?</p>','<button class="btn" data-a="close-modal">Not now</button><button class="btn pri" data-a="raise" data-tag="'+esc(tag)+'" data-pri="'+pri+'" data-title="'+esc(finds[0])+'">Raise anomaly ('+pri+')</button>');
+  }else openModal('Inspection saved',sum,'<button class="btn pri" data-a="close-modal">Done</button>');
+  refresh();
+}
+function raiseForm(tag,pri,title){
+  const opts=visibleAssets().map(a=>'<option value="'+esc(a.tag)+'"'+(a.tag===tag?' selected':'')+'>'+esc(a.tag+' — '+a.desc)+'</option>').join('');
+  openModal('Raise anomaly','<div class="frm"><label class="w">Asset<select id="n-tag">'+opts+'</select></label><label class="w">Title<input id="n-title" value="'+esc(title||'')+'"></label>'+
+   '<label class="w">Description<textarea id="n-desc"></textarea></label><label>Priority<select id="n-pri">'+Object.entries(PRIORITY).map(([k,v])=>'<option value="'+k+'"'+(k===(pri||'P3')?' selected':'')+'>'+v.label+'</option>').join('')+'</select></label>'+
+   '<label>Owner<input id="n-owner" value="Integrity Eng."></label><label>Temporary repair<select id="n-temp"><option value="">None</option><option>Composite wrap</option><option>Leak clamp</option><option>Engineered enclosure</option></select></label><label>Repair expiry<input type="date" id="n-exp"></label>'+
+   '<label class="w">First action<input id="n-act" placeholder="e.g. Fitness-for-service assessment"></label></div>',
+   '<button class="btn" data-a="close-modal">Cancel</button><button class="btn pri" data-a="raise-save">Raise anomaly</button>');
+}
+function saveRaise(){
+  const title=val('n-title').trim();if(!title){toast('Give the anomaly a title');return}
+  const ids=DB.anomalies.map(x=>+x.id.split('-')[1]);const id='AN-'+pad(Math.max(0,...ids)+1,4);
+  const temp=val('n-temp')?{type:val('n-temp'),expiry:val('n-exp')||addMonths(TODAY,12)}:null;
+  const act=val('n-act').trim();
+  DB.anomalies.push({id,tag:val('n-tag'),raised:TODAY,title,desc:val('n-desc'),priority:val('n-pri'),status:'Open',owner:val('n-owner'),temp,actions:act?[{text:act,owner:val('n-owner'),done:false}]:[]});
+  save();computeAll();closeModal();refresh();toast(id+' raised');anView(id);
+}
+function anView(id){
+  const x=DB.anomalies.find(a=>a.id===id);if(!x)return;const a=assetBy(x.tag);
+  let b='<div class="kv"><div><span>Asset</span>'+tagLink(x.tag)+'</div><div><span>Raised</span>'+fd(x.raised)+'</div><div><span>Target date</span>'+fd(anDue(x))+'</div><div><span>Priority</span>'+pb(x.priority)+'</div><div><span>Owner</span>'+esc(x.owner)+'</div><div><span>Temporary repair</span>'+(x.temp?esc(x.temp.type)+'<br><span class="muted">expires '+fd(x.temp.expiry)+'</span>':'—')+'</div></div>'+
+    '<p>'+esc(x.desc||'')+'</p><div class="muted" style="font-size:12.5px">'+esc(a?a.desc:'')+'</div>'+
+    '<h4 style="font-size:13px;margin:16px 0 6px">Actions</h4>'+(x.actions.length?x.actions.map((ac,i)=>'<label style="display:flex;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" data-a="act-toggle" data-id="'+x.id+'" data-i="'+i+'"'+(ac.done?' checked':'')+(x.status==='Closed'?' disabled':'')+'> <span'+(ac.done?' style="text-decoration:line-through;color:var(--muted)"':'')+'>'+esc(ac.text)+'</span> <span class="muted">— '+esc(ac.owner)+'</span></label>').join(''):'<div class="muted">No actions yet.</div>')+
+    (x.status!=='Closed'?'<div class="toolbar" style="margin-top:8px"><input id="a-new" placeholder="New action" style="flex:1"><input id="a-own" placeholder="Owner" style="width:140px"><button class="btn sm" data-a="act-add" data-id="'+x.id+'">Add</button></div>':'')+
+    '<div class="frm" style="margin-top:12px"><label>Status<select id="a-status" data-a="an-setstatus" data-id="'+x.id+'">'+['Open','In progress','Closed'].map(s=>'<option'+(x.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select></label><label>Priority<select data-a="an-setpri" data-id="'+x.id+'">'+Object.keys(PRIORITY).map(p=>'<option'+(x.priority===p?' selected':'')+'>'+p+'</option>').join('')+'</select></label></div>';
+  openModal(x.id+' — '+x.title,b,'<button class="btn" data-a="close-modal">Close</button>');
+}
+function insView(id){
+  const i=DB.inspections.find(x=>x.id===id);if(!i)return;const t=tplById(i.tpl);
+  let b='<div class="kv"><div><span>Asset</span>'+tagLink(i.tag)+'</div><div><span>Date</span>'+fd(i.date)+'</div><div><span>Inspector</span>'+esc(i.inspector)+'</div><div><span>Template</span>'+esc(tplName(i.tpl))+'</div><div><span>Grade</span>'+(i.grade?gradeBadge(i.grade):'—')+'</div></div>';
+  if(i.readings)b+='<h4 style="font-size:13px;margin:16px 0 6px">Readings</h4>'+table('ir',[{h:'CML',f:r=>esc(r.cml)},{h:'Thickness (mm)',n:1,f:r=>fmt(r.t,2)}],i.readings);
+  if(t){const rows=t.fields.filter(f=>f.t!=='cml'&&i.data[f.k]!=null&&i.data[f.k]!=='');if(rows.length)b+='<h4 style="font-size:13px;margin:16px 0 6px">Results</h4>'+rows.map(f=>'<div style="margin:3px 0"><span class="muted">'+esc(f.l)+':</span> '+(i.data[f.k]==='Fail'?'<b style="color:var(--H)">Fail</b>':esc(i.data[f.k]))+'</div>').join('')}
+  openModal('Inspection '+i.id,b,'<button class="btn danger" data-a="ins-del" data-id="'+i.id+'">Delete record</button><button class="btn" data-a="close-modal">Close</button>');
+}
+function assetForm(tag){
+  const a=tag?assetBy(tag):{tag:'',sys:UI.sys||DB.systems[0].id,cls:'PIPE',desc:'',fluid:'Crude oil',mat:'CS',dp:10,dt:50,od:114.3,tnom:6.02,inst:new Date().getFullYear(),dms:[]};
+  const sel=(id,opts,cur)=>'<select id="'+id+'">'+opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return '<option value="'+esc(v)+'"'+(v===cur?' selected':'')+'>'+esc(l)+'</option>'}).join('')+'</select>';
+  openModal(tag?'Edit asset '+tag:'Add asset','<div class="frm"><label>Tag<input id="f-tag" value="'+esc(a.tag)+'"'+(tag?' disabled':'')+'></label><label>System'+sel('f-sys',DB.systems.map(s=>[s.id,s.name]),a.sys)+'</label>'+
+   '<label class="w">Description<input id="f-desc" value="'+esc(a.desc)+'"></label><label>Class'+sel('f-cls',Object.entries(CLASSES),a.cls)+'</label><label>Fluid / service'+sel('f-fluid',Object.keys(FLUID_CRIT),a.fluid)+'</label>'+
+   '<label>Material<input id="f-mat" list="matlist" value="'+esc(a.mat)+'"><datalist id="matlist">'+Object.keys(DB.settings.stress).map(k=>'<option value="'+esc(k)+'">').join('')+'</datalist></label><label>Install year<input type="number" id="f-inst" value="'+a.inst+'"></label>'+
+   '<label>Design pressure (barg)<input type="number" step="any" id="f-dp" value="'+a.dp+'"></label><label>Design temperature (°C)<input type="number" step="any" id="f-dt" value="'+a.dt+'"></label>'+
+   '<label>Outside diameter (mm, 0 = not thickness-monitored)<input type="number" step="any" id="f-od" value="'+a.od+'"></label><label>Nominal thickness (mm)<input type="number" step="any" id="f-tnom" value="'+a.tnom+'"></label>'+
+   '<label class="w">Damage mechanisms (comma-separated)<input id="f-dms" value="'+esc(a.dms.join(', '))+'"></label></div><p class="hint">'+(tag?'':'Consequence ratings are set from the fluid using the rule-based defaults. You can override them under Criticality.')+'</p>',
+   '<button class="btn" data-a="close-modal">Cancel</button><button class="btn pri" data-a="asset-save" data-tag="'+esc(tag||'')+'">Save</button>');
+}
+function saveAsset(tag){
+  const isNew=!tag;const t=isNew?val('f-tag').trim().toUpperCase():tag;
+  if(!t){toast('Tag is required');return}if(isNew&&assetBy(t)){toast('Tag already exists');return}
+  const o={tag:t,sys:val('f-sys'),cls:val('f-cls'),desc:val('f-desc').trim()||t,fluid:val('f-fluid'),mat:val('f-mat').trim()||'CS',inst:+val('f-inst')||new Date().getFullYear(),
+    dp:+val('f-dp')||0,dt:+val('f-dt')||0,od:+val('f-od')||0,tnom:+val('f-tnom')||0,dms:val('f-dms').split(',').map(s=>s.trim()).filter(Boolean)};
+  if(o.od>0&&o.tnom>0&&tminOf(o)>=o.tnom){toast('Nominal thickness is below the required minimum for this pressure. Check the inputs.');return}
+  if(isNew){const c=FLUID_CRIT[o.fluid]||[3,2,3];o.crit={s:c[0],e:c[1],p:c[2]};DB.assets.push(o)}else Object.assign(assetBy(t),o);
+  save();computeAll();closeModal();refresh();toast(isNew?t+' added':t+' updated');openAsset(t);
+}
+
+/* ---------------- render & routing ---------------- */
+function navHTML(){
+  let h='';VIEWS_META.forEach(([id,label,grp])=>{if(grp)h+='<div class="grp">'+grp+'</div>';h+='<a href="#'+id+'" class="'+(UI.view===id?'on':'')+'"><svg viewBox="0 0 24 24" fill="currentColor">'+ICONS[id]+'</svg>'+label+'</a>'});
+  return h;
+}
+function refresh(){
+  $('#nav').innerHTML=navHTML();
+  $('#title').textContent=(VIEWS_META.find(v=>v[0]===UI.view)||[0,''])[1];
+  $('#fac').innerHTML='<option value="ALL">All facilities</option>'+DB.facilities.map(f=>'<option value="'+f.id+'"'+(UI.fac===f.id?' selected':'')+'>'+esc(f.name)+'</option>').join('');
+  const y=window.scrollY;$('#view').innerHTML=V[UI.view]();window.scrollTo(0,y);
+  if(UI.drawer)openAsset(UI.drawer);
+}
+function route(){const h=(location.hash||'').replace('#','');UI.view=V[h]?h:'dashboard';refresh();window.scrollTo(0,0)}
+window.addEventListener('hashchange',route);
+$('#fac').addEventListener('change',e=>{UI.fac=e.target.value;UI.sys=null;refresh()});
+$('#q').addEventListener('input',e=>{UI.q=e.target.value;refresh()});
+$('#scrim').addEventListener('click',closeDrawer);
+$('#mscrim').addEventListener('click',closeModal);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal').classList.contains('on'))closeModal();else closeDrawer()}});
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,d=el.dataset;
+  if(el.tagName==='SELECT'||el.tagName==='INPUT'&&el.type!=='checkbox')return;
+  switch(a){
+    case 'asset':e.preventDefault();closeModal();openAsset(d.tag);break;
+    case 'close-drawer':closeDrawer();break;
+    case 'close-modal':closeModal();break;
+    case 'sort':{const s=UI.sort[d.k];UI.sort[d.k]={h:d.h,d:s&&s.h===d.h?-s.d:1};refresh();break}
+    case 'tree':UI.sys=d.s||null;refresh();break;
+    case 'record':e.stopPropagation();recordForm(d.tag);break;
+    case 'cml-add':{const tb=$('#cmltbl tbody');const n=tb.rows.length+1;tb.insertAdjacentHTML('beforeend','<tr><td><input class="cml-id" value="CML-'+pad(n)+'" style="width:110px"></td><td class="muted">—</td><td><input class="cml-t" type="number" step="0.01" min="0" placeholder="mm"></td></tr>');break}
+    case 'rec-save':saveRecord(d.tag,d.tpl);break;
+    case 'raise':e.stopPropagation();raiseForm(d.tag||(UI.drawer||''),d.pri,d.title);break;
+    case 'raise-save':saveRaise();break;
+    case 'anview':anView(d.id);break;
+    case 'insview':insView(d.id);break;
+    case 'ins-del':{DB.inspections=DB.inspections.filter(i=>i.id!==d.id);DB.documents=DB.documents.filter(x=>x.no!==d.id+'-RPT');save();computeAll();closeModal();refresh();toast(d.id+' deleted');break}
+    case 'act-toggle':{const x=DB.anomalies.find(q=>q.id===d.id);x.actions[+d.i].done=el.checked;if(x.status==='Open'&&el.checked)x.status='In progress';save();computeAll();refresh();anView(d.id);break}
+    case 'act-add':{const t=val('a-new').trim();if(!t)return;const x=DB.anomalies.find(q=>q.id===d.id);x.actions.push({text:t,owner:val('a-own')||x.owner,done:false});save();anView(d.id);refresh();break}
+    case 'instab':UI.insTab=d.t;refresh();break;
+    case 'mxgo':UI.mx={p:+d.p,c:+d.c};location.hash='rbi';break;
+    case 'mxsel':UI.mx=UI.mx&&UI.mx.p===+d.p&&UI.mx.c===+d.c?null:{p:+d.p,c:+d.c};refresh();break;
+    case 'mxclear':UI.mx=null;refresh();break;
+    case 'mxedit':{const lv=['L','M','MH','H'];const cur=DB.settings.matrix[d.p-1][d.c-1];DB.settings.matrix[d.p-1][d.c-1]=lv[(lv.indexOf(cur)+1)%4];save();computeAll();refresh();break}
+    case 'crit-defaults':{visibleAssets().forEach(x=>{const c=FLUID_CRIT[x.fluid];if(c)x.crit={s:c[0],e:c[1],p:c[2]}});save();computeAll();refresh();toast('Defaults applied');break}
+    case 'strat-del':DB.settings.strategies.splice(+d.i,1);save();refresh();break;
+    case 'strat-add':openModal('Add failure mode — '+UI.stratCls,'<div class="frm"><label class="w">Failure mode<input id="s-mode"></label><label class="w">Mechanism<input id="s-mech"></label><label class="w">Effect<input id="s-eff"></label><label class="w">Task<input id="s-task"></label><label>Method<input id="s-meth"></label><label>Interval (months, or RBI)<input id="s-int" value="RBI"></label><label>Discipline<input id="s-disc" value="Integrity"></label></div>','<button class="btn" data-a="close-modal">Cancel</button><button class="btn pri" data-a="strat-save">Add</button>');break;
+    case 'strat-save':{const iv=val('s-int').trim().toUpperCase()==='RBI'?'RBI':(+val('s-int')||12);if(!val('s-mode').trim()){toast('Failure mode is required');return}
+      DB.settings.strategies.push({cls:UI.stratCls,mode:val('s-mode'),mech:val('s-mech'),effect:val('s-eff'),task:val('s-task'),method:val('s-meth'),interval:iv,disc:val('s-disc')});save();closeModal();refresh();break}
+    case 'strat-doc':{const rows=DB.settings.strategies.filter(s=>s.cls===UI.stratCls);const as=visibleAssets().filter(x=>x.cls===UI.stratCls);
+      let t='MAINTENANCE & INSPECTION STRATEGY\nEquipment class: '+UI.stratCls+' — '+CLASSES[UI.stratCls]+'\nScope: '+(UI.fac==='ALL'?'All facilities':DB.facilities.find(f=>f.id===UI.fac).name)+'\nGenerated: '+fd(TODAY)+'\n\n1. FAILURE MODES AND TASKS\n';
+      rows.forEach((s,i)=>{t+='\n1.'+(i+1)+' '+s.mode+' — '+s.mech+'\n    Effect: '+s.effect+'\n    Task: '+s.task+' ('+s.method+')\n    Interval: '+(s.interval==='RBI'?'Per RBI assessment':s.interval+' months')+'\n    Discipline: '+s.disc+'\n'});
+      t+='\n2. ASSETS COVERED ('+as.length+')\n';as.forEach(x=>{const m=M[x.tag];t+='\n  '+x.tag+'  '+x.desc+'  | Crit '+m.crit+' | Risk '+RISK_NAME[m.risk]+' | RBI interval '+m.interval+' mo | Next due '+fd(m.due)});
+      openModal('Strategy document — '+UI.stratCls,'<textarea class="mono" style="min-height:360px" readonly>'+esc(t)+'</textarea>','<button class="btn" data-a="close-modal">Close</button><button class="btn pri" data-a="copy-strat">Copy text</button>');UI._strat=t;break}
+    case 'copy-strat':copyText(UI._strat,'Strategy document');break;
+    case 'mat-add':case 'mat-edit':{const m=a==='mat-edit'?DB.materials.find(x=>x.code===d.code):{code:'SP-'+pad(1000+DB.materials.length+1,4),desc:'',cat:'',stock:0,min:1,crit:'Medium',tags:[]};
+      openModal(a==='mat-edit'?'Edit '+m.code:'Add catalogue item','<div class="frm"><label>Code<input id="m-code" value="'+esc(m.code)+'"'+(a==='mat-edit'?' disabled':'')+'></label><label>Category<input id="m-cat" value="'+esc(m.cat)+'"></label><label class="w">Description<input id="m-desc" value="'+esc(m.desc)+'"></label><label>Stock<input type="number" id="m-stock" value="'+m.stock+'"></label><label>Minimum stock<input type="number" id="m-min" value="'+m.min+'"></label><label>Spares criticality<select id="m-crit">'+['High','Medium','Low'].map(c=>'<option'+(m.crit===c?' selected':'')+'>'+c+'</option>').join('')+'</select></label><label class="w">Where used — tags (comma-separated)<input id="m-tags" value="'+esc(m.tags.join(', '))+'"></label></div>','<button class="btn" data-a="close-modal">Cancel</button><button class="btn pri" data-a="mat-save" data-code="'+(a==='mat-edit'?esc(m.code):'')+'">Save</button>');break}
+    case 'mat-save':{const tags=val('m-tags').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);const bad=tags.filter(t=>!assetBy(t));if(bad.length){toast('Unknown tag: '+bad[0]);return}
+      const o={desc:val('m-desc').trim(),cat:val('m-cat').trim(),stock:+val('m-stock')||0,min:+val('m-min')||0,crit:val('m-crit'),tags};if(!o.desc){toast('Description is required');return}
+      if(d.code)Object.assign(DB.materials.find(x=>x.code===d.code),o);else{const c=val('m-code').trim();if(DB.materials.some(x=>x.code===c)){toast('Code already exists');return}DB.materials.push(Object.assign({code:c},o))}
+      save();closeModal();refresh();break}
+    case 'doc-add':openModal('Register document','<div class="frm"><label>Document no.<input id="d-no"></label><label>Type<input id="d-type" list="dtypes" value="Report"><datalist id="dtypes">'+[...new Set(DB.documents.map(x=>x.type))].map(t=>'<option value="'+esc(t)+'">').join('')+'</datalist></label><label class="w">Title<input id="d-title"></label><label>Revision<input id="d-rev" value="0"></label><label class="w">Linked tags (comma-separated)<input id="d-tags" value="'+esc(UI.drawer||'')+'"></label></div>','<button class="btn" data-a="close-modal">Cancel</button><button class="btn pri" data-a="doc-save">Register</button>');break;
+    case 'doc-save':{const no=val('d-no').trim(),ti=val('d-title').trim();if(!no||!ti){toast('Number and title are required');return}if(DB.documents.some(x=>x.no===no)){toast('Document number already exists');return}
+      const tags=val('d-tags').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);const bad=tags.filter(t=>!assetBy(t));if(bad.length){toast('Unknown tag: '+bad[0]);return}
+      DB.documents.push({no,title:ti,type:val('d-type').trim()||'Other',rev:val('d-rev')||'0',tags});save();closeModal();refresh();break}
+    case 'add-asset':assetForm(null);break;
+    case 'edit-asset':assetForm(d.tag);break;
+    case 'asset-save':saveAsset(d.tag);break;
+    case 'add-system':openModal('Add system','<div class="frm"><label>Facility<select id="y-fac">'+DB.facilities.map(f=>'<option value="'+f.id+'">'+esc(f.name)+'</option>').join('')+'</select></label><label>Code<input id="y-code" placeholder="e.g. M60"></label><label class="w">Name<input id="y-name" placeholder="e.g. M60 Chemical injection"></label></div>','<button class="btn" data-a="close-modal">Cancel</button><button class="btn pri" data-a="system-save">Add</button>');break;
+    case 'system-save':{const id=val('y-fac')+'-'+val('y-code').trim().toUpperCase();if(!val('y-code').trim()||!val('y-name').trim()){toast('Code and name are required');return}if(DB.systems.some(s=>s.id===id)){toast('System code already exists');return}
+      DB.systems.push({id,fac:val('y-fac'),name:val('y-name').trim()});save();closeModal();UI.sys=id;refresh();break}
+    case 'copy-assets':{const as=visibleAssets().filter(x=>(!UI.sys||x.sys===UI.sys)&&(!UI.cls||x.cls===UI.cls));
+      const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+      const rows=[['Tag','Description','System','Class','Fluid','Material','Design P (barg)','Design T (C)','OD (mm)','t nom (mm)','t min (mm)','Installed','Damage mechanisms','S','E','P','Criticality','PoF','CoF','Risk','Interval (mo)','Next due']].concat(as.map(x=>{const m=M[x.tag];return [x.tag,x.desc,sysById(x.sys).name,x.cls,x.fluid,x.mat,x.dp,x.dt,x.od,x.tnom,m.tmin,x.inst,x.dms.join('; '),x.crit.s,x.crit.e,x.crit.p,m.crit,m.pof,m.cof,RISK_NAME[m.risk],m.interval,m.due]}));
+      copyText(rows.map(r=>r.map(q).join(',')).join('\n'),as.length+' assets copied as CSV');break}
+    case 'copy-json':copyText(JSON.stringify(DB,null,1),'Data');break;
+    case 'tpl-field':{const i=+d.i;const l=val('nf-'+i).trim();if(!l){toast('Enter a field label');return}DB.settings.templates[i].fields.splice(DB.settings.templates[i].fields.length-1,0,{k:'x'+Date.now(),l,t:val('nt-'+i)});save();refresh();toast('Field added');break}
+    case 'reset':openModal('Reset demo data?','<p>This replaces all assets, inspections, anomalies and settings in this browser with the original sample data.</p>','<button class="btn" data-a="close-modal">Cancel</button><button class="btn danger" data-a="reset-yes">Reset</button>');break;
+    case 'reset-yes':DB=buildSeed();save();computeAll();closeModal();closeDrawer();refresh();toast('Demo data reset');break;
+  }
+});
+document.addEventListener('change',e=>{
+  const el=e.target;const a=el.dataset&&el.dataset.a;if(!a)return;const d=el.dataset;
+  if(a==='cls-filter'){UI.cls=el.value;refresh()}
+  else if(a==='an-status'){UI.anStatus=el.value;refresh()}
+  else if(a==='an-pri'){UI.anPri=el.value;refresh()}
+  else if(a==='strat-cls'){UI.stratCls=el.value;refresh()}
+  else if(a==='doc-type'){UI.docType=el.value;refresh()}
+  else if(a==='rec-tpl')recordForm(d.tag,el.value);
+  else if(a==='crit'){assetBy(d.tag).crit[d.k]=+el.value;save();computeAll();refresh()}
+  else if(a==='interval'){const v=Math.max(1,Math.min(240,+el.value||1));DB.settings.intervals[d.k]=v;save();computeAll();refresh()}
+  else if(a==='stress'){const v=+el.value;if(v>=10){DB.settings.stress[d.k]=v;save();computeAll();refresh()}}
+  else if(a==='an-setstatus'){const x=DB.anomalies.find(q=>q.id===d.id);if(el.value==='Closed'&&x.actions.some(ac=>!ac.done)){toast('Complete all actions before closing');el.value=x.status;return}x.status=el.value;save();computeAll();refresh();anView(d.id)}
+  else if(a==='an-setpri'){DB.anomalies.find(q=>q.id===d.id).priority=el.value;save();computeAll();refresh();anView(d.id)}
+});
+
+computeAll();route();
+})();
+</script>
+</body>
+</html>

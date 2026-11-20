@@ -1,0 +1,27 @@
+{
+  "app": { "name": "IntegriSea", "tagline": "Asset integrity management" },
+  "warning": "Unvalidated calculations: all results must be validated by qualified integrity engineers before any operational use.",
+  "nav": { "dashboard": "Dashboard", "assets": "Asset register", "facilities": "Facilities & systems", "users": "Users", "config": "Configuration", "audit": "Audit trail", "logout": "Log out", "password": "Password", "allFacilities": "All facilities" },
+  "common": { "save": "Save", "cancel": "Cancel", "close": "Close", "edit": "Edit", "create": "Create", "delete": "Delete", "search": "Search…", "all": "All", "none": "—", "loading": "Loading…", "empty": "No results", "yes": "Yes", "no": "No", "actions": "Actions", "saved": "Saved", "error": "An error occurred", "page": "Page", "of": "of", "comingSoon": "Available in a later step" },
+  "login": { "title": "Sign in", "email": "Email", "password": "Password", "submit": "Sign in", "expired": "Session expired, please sign in again.", "failed": "Incorrect email or password" },
+  "dashboard": { "welcome": "Welcome", "assets": "Active assets", "facilities": "Facilities", "systems": "Systems", "byClass": "Assets by class", "next": "The full dashboard (risk, inspections, anomalies) comes with the next steps." },
+  "assets": {
+    "title": "Asset register", "new": "New asset", "import": "Import", "export": "Export", "template": "Download template", "showArchived": "Archived",
+    "tag": "Tag", "description": "Description", "class": "Class", "system": "System", "facility": "Facility", "fluid": "Fluid", "material": "Material",
+    "designPressure": "Design pressure (barg)", "designTemp": "Design temperature (°C)", "od": "Outside diameter (mm)", "nominalThickness": "Nominal thickness (mm)",
+    "installYear": "Installation year", "mechanisms": "Degradation mechanisms", "mechanismsHint": "Comma-separated", "crit": "Consequence scores (1 to 5)", "critS": "Safety (S)", "critE": "Environment (E)", "critP": "Production (P)", "critDefault": "Default",
+    "archive": "Archive", "restore": "Restore", "archived": "Archived", "archiveConfirm": "Archive this asset? It stays viewable and its history is kept.",
+    "tabs": { "attributes": "Attributes", "criticality": "Criticality / RBI", "inspections": "Inspections", "anomalies": "Anomalies", "maintenance": "Maintenance", "spares": "Spare parts", "documents": "Documents", "history": "Change history" },
+    "total": "{n} asset(s)", "created": "Asset created", "updated": "Asset updated", "tagTaken": "This tag already exists"
+  },
+  "import": {
+    "title": "Import assets (CSV / Excel)", "file": ".csv or .xlsx file", "hint": "Existing tags are updated, new ones are created. Columns: see the template.", "check": "Check", "run": "Import", "partial": "Import valid rows even if there are errors",
+    "valid": "{n} valid row(s)", "done": "Import complete: {created} created, {updated} updated", "errors": "Errors", "line": "Line", "none": "No errors"
+  },
+  "facilities": { "title": "Facilities & systems", "newFacility": "New facility", "newSystem": "New system", "code": "Code", "name": "Name", "type": "Type", "systems": "Systems", "assets": "Assets", "deleteSystem": "Delete this system?" },
+  "users": { "title": "Users", "new": "New user", "email": "Email", "fullName": "Full name", "password": "Password (min. 10 characters)", "admin": "Administrator", "active": "Active", "locale": "Language", "rights": "Rights per facility", "role": "Role", "lastLogin": "Last sign-in", "addRight": "Add a facility", "never": "Never" },
+  "roles": { "admin": "Administrator", "engineer": "Integrity engineer", "inspector": "Inspector", "reader": "Reader" },
+  "config": { "title": "Configuration", "classes": "Equipment classes", "attributes": "Additional attributes", "nameFr": "Name (FR)", "nameEn": "Name (EN)", "tracking": "Tracking", "thickness": "Thickness (UT)", "condition": "Condition (grade)", "cfihos": "CFIHOS code", "active": "Active", "newClass": "New class", "newAttr": "New attribute", "key": "Key", "type": "Type", "scope": "Class (empty = all)", "more": "Risk matrix, intervals, allowable stresses, templates…: later steps." },
+  "audit": { "title": "Audit trail", "when": "Date", "who": "User", "action": "Action", "entity": "Object", "details": "Details", "before": "Before", "after": "After", "from": "From", "to": "To", "all": "All" },
+  "password": { "title": "Change password", "current": "Current password", "new": "New password (min. 10 characters)" }
+}

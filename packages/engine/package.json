@@ -1,0 +1,12 @@
+{
+  "name": "@integrisea/engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Moteur de calcul d'intégrité (t_min, vitesses de corrosion, RL, PoF/CoF, intervalles). Pur : aucune dépendance, aucune E/S. Implémenté à l'étape 2.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "license": "UNLICENSED"
+}

@@ -32,6 +32,16 @@ function computeGrade(template, data) {
 			case "anyFail":
 				if (fails > 0) bump(r.grade, { code: "grade_fail", params: { fails, grade: r.grade } });
 				break;
+			case "severityFail": {
+				// Gravité par point de contrôle : un point « critique » non conforme impose ≥ critical, tout autre point non conforme
+				// impose ≥ normal, et `countAtLeast` points non conformes (ou plus) imposent countGrade. Gravité = champ `sev` ('critical' | autre).
+				const failed = pfFields.filter((f) => data[f.k] === "Fail");
+				const critical = failed.filter((f) => f.sev === "critical");
+				if (critical.length) bump(r.critical, { code: "grade_fail_critical", params: { fails: critical.length, grade: r.critical, fields: critical.map((f) => f.k) } });
+				if (failed.length) bump(r.normal, { code: "grade_fail", params: { fails: failed.length, grade: r.normal } });
+				if (failed.length >= r.countAtLeast) bump(r.countGrade, { code: "grade_fail_count", params: { fails: failed.length, grade: r.countGrade } });
+				break;
+			}
 			case "failCountMap": {
 				const g = r.map[Math.min(fails, r.map.length - 1)];
 				bump(g, { code: "grade_fail_count", params: { fails, grade: g } });
@@ -79,11 +89,12 @@ function defaultTemplates() {
 		{
 			id: "EXD", name: "Detailed Ex inspection (IEC 60079-17)", classes: ["EX"],
 			fields: [
-				{ k: "c1", l: "Marking and certificate match the area classification", t: "pf" }, { k: "c2", l: "Enclosure and glass undamaged", t: "pf" },
-				{ k: "c3", l: "Flamepath gaps and fasteners satisfactory", t: "pf" }, { k: "c4", l: "Cable glands secure and correct type", t: "pf" },
-				{ k: "c5", l: "Earthing and bonding intact", t: "pf" }, { k: "c6", l: "No unauthorised modifications", t: "pf" }, notes,
+				{ k: "c1", l: "Marking and certificate match the area classification", t: "pf", sev: "critical" }, { k: "c2", l: "Enclosure and glass undamaged", t: "pf" },
+				{ k: "c3", l: "Flamepath gaps and fasteners satisfactory", t: "pf", sev: "critical" }, { k: "c4", l: "Cable glands secure and correct type", t: "pf", sev: "critical" },
+				{ k: "c5", l: "Earthing and bonding intact", t: "pf", sev: "critical" }, { k: "c6", l: "No unauthorised modifications", t: "pf" }, notes,
 			],
-			rules: [{ type: "failCountMap", map: [1, 2, 3, 4] }],
+			// Gravité par point : critique non conforme → ≥ 3 ; autre non conforme → ≥ 2 ; 3 non conformes ou plus → 4. (provisoire)
+			rules: [{ type: "severityFail", critical: 3, normal: 2, countAtLeast: 3, countGrade: 4 }],
 		},
 		{
 			id: "PSV", name: "PSV bench test", classes: ["PSV"],

@@ -18,6 +18,7 @@ const tab = ref('schedule');
 const status = ref(route.query.status || '');
 const q = ref('');
 const cls = ref('');
+const discipline = ref('');
 const schedule = ref([]);
 const records = ref([]);
 const total = ref(0);
@@ -26,14 +27,14 @@ const form = ref(null); // { asset? }
 const anomalyDraft = ref(null);
 let timer;
 
-const query = computed(() => ({ facility: auth.facility, q: q.value, status: tab.value === 'schedule' ? status.value : '', class: tab.value === 'schedule' ? cls.value : '' }));
+const query = computed(() => ({ facility: auth.facility, q: q.value, status: tab.value === 'schedule' ? status.value : '', class: tab.value === 'schedule' ? cls.value : '', discipline: tab.value === 'schedule' ? discipline.value : '' }));
 
 async function load() {
 	await lookups.load();
 	if (tab.value === 'schedule') schedule.value = await api('/inspections/schedule', { query: query.value });
 	else { const r = await api('/inspections', { query: { facility: auth.facility, q: q.value, page: page.value, limit: 50 } }); records.value = r.items; total.value = r.total; }
 }
-watch([tab, status, cls, () => auth.facility], () => { page.value = 1; load(); }, { immediate: true });
+watch([tab, status, cls, discipline, () => auth.facility], () => { page.value = 1; load(); }, { immediate: true });
 watch(q, () => { clearTimeout(timer); timer = setTimeout(() => { page.value = 1; load(); }, 300); });
 watch(page, load);
 
@@ -58,6 +59,7 @@ const report = (r) => download(`/inspections/${r.id}/report`, {}, `${r.reference
 		<template v-if="tab === 'schedule'">
 			<select v-model="status" class="form-select form-select-sm" style="max-width: 170px"><option value="">{{ t('common.status') }} : {{ t('common.all') }}</option><option v-for="s in ['overdue', 'due_soon', 'planned']" :key="s" :value="s">{{ t('sched.' + s) }}</option></select>
 			<select v-model="cls" class="form-select form-select-sm" style="max-width: 170px"><option value="">{{ t('assets.class') }}</option><option v-for="c in lookups.classes" :key="c.code" :value="c.code">{{ c.code }}</option></select>
+			<select v-model="discipline" class="form-select form-select-sm" style="max-width: 190px"><option value="">{{ t('assets.discipline') }}</option><option v-for="d in lookups.disciplines" :key="d" :value="d">{{ d }}</option></select>
 		</template>
 	</div>
 

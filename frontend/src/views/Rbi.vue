@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { api } from '@/api';
 import { auth } from '@/stores/auth';
 import { lookups } from '@/stores/lookups';
+import { settings } from '@/stores/settings';
 import { num, STATUS_CLASS } from '@/utils';
 import RiskMatrix from '@/components/RiskMatrix.vue';
 import ExportMenu from '@/components/ExportMenu.vue';
@@ -19,28 +20,30 @@ const page = ref(1);
 const mx = ref(null);
 const q = ref(route.query.q || '');
 const cls = ref(route.query.class || '');
+const discipline = ref(route.query.discipline || '');
 const risk = ref(route.query.risk || '');
 const criticality = ref(route.query.criticality || '');
 const status = ref(route.query.status || '');
 const cell = ref(route.query.pof ? { pof: Number(route.query.pof), cof: Number(route.query.cof) } : null);
 const notCalc = ref(false);
+const matrixProvisional = computed(() => settings.data?._meta?.provisional?.includes('matrix'));
 let timer;
 
-const query = computed(() => ({ facility: auth.facility, q: q.value, class: cls.value, risk: risk.value, criticality: criticality.value, status: status.value, pof: cell.value?.pof, cof: cell.value?.cof, notCalculable: notCalc.value ? 1 : '' }));
+const query = computed(() => ({ facility: auth.facility, q: q.value, class: cls.value, discipline: discipline.value, risk: risk.value, criticality: criticality.value, status: status.value, pof: cell.value?.pof, cof: cell.value?.cof, notCalculable: notCalc.value ? 1 : '' }));
 
 async function load() {
 	await lookups.load();
 	const [list, m] = await Promise.all([
 		api('/rbi/assets', { query: { ...query.value, page: page.value, limit: 50 } }),
-		api('/rbi/matrix', { query: { facility: auth.facility, q: q.value } }),
+		api('/rbi/matrix', { query: { facility: auth.facility, q: q.value, discipline: discipline.value } }),
 	]);
 	items.value = list.items; total.value = list.total; mx.value = m;
 }
-watch([cls, risk, criticality, status, cell, notCalc, () => auth.facility], () => { page.value = 1; load(); }, { immediate: true });
+watch([cls, discipline, risk, criticality, status, cell, notCalc, () => auth.facility], () => { page.value = 1; load(); }, { immediate: true });
 watch(q, () => { clearTimeout(timer); timer = setTimeout(() => { page.value = 1; load(); }, 300); });
 watch(page, load);
 const pick = (c) => { cell.value = cell.value && cell.value.pof === c.pof && cell.value.cof === c.cof ? null : c; };
-const reset = () => { q.value = cls.value = risk.value = criticality.value = status.value = ''; cell.value = null; notCalc.value = false; router.replace({ query: {} }); };
+const reset = () => { q.value = cls.value = discipline.value = risk.value = criticality.value = status.value = ''; cell.value = null; notCalc.value = false; router.replace({ query: {} }); };
 </script>
 
 <template>
@@ -53,6 +56,7 @@ const reset = () => { q.value = cls.value = risk.value = criticality.value = sta
 		<div class="col-xl-4">
 			<div class="card-is p-3">
 				<h2 class="h6">{{ t('dash.matrix') }}</h2>
+				<div v-if="matrixProvisional" class="small mb-2"><span class="badge text-bg-warning me-1"><i class="fa-solid fa-flask me-1"></i>{{ t('prov.badge') }}</span>{{ t('prov.matrix') }}</div>
 				<RiskMatrix v-if="mx" :matrix="mx.matrix" :counts="mx.counts" :selected="cell" @select="pick" />
 				<div v-if="cell" class="mt-2"><span class="badge text-bg-primary">{{ t('rbi.cell', cell) }}</span> <a href="#" class="small ms-1" @click.prevent="cell = null">{{ t('rbi.clearCell') }}</a></div>
 			</div>
@@ -61,6 +65,7 @@ const reset = () => { q.value = cls.value = risk.value = criticality.value = sta
 			<div class="card-is p-3 mb-3 d-flex flex-wrap gap-2 align-items-center">
 				<input v-model="q" class="form-control form-control-sm" style="max-width: 200px" :placeholder="t('common.search')" />
 				<select v-model="cls" class="form-select form-select-sm" style="max-width: 170px"><option value="">{{ t('assets.class') }}</option><option v-for="c in lookups.classes" :key="c.code" :value="c.code">{{ c.code }}</option></select>
+				<select v-model="discipline" class="form-select form-select-sm" style="max-width: 190px"><option value="">{{ t('assets.discipline') }}</option><option v-for="d in lookups.disciplines" :key="d" :value="d">{{ d }}</option></select>
 				<select v-model="risk" class="form-select form-select-sm" style="max-width: 150px"><option value="">{{ t('risk.risk') }}</option><option v-for="r in ['H', 'MH', 'M', 'L']" :key="r" :value="r">{{ t('risk.' + r) }}</option></select>
 				<select v-model="criticality" class="form-select form-select-sm" style="max-width: 130px"><option value="">{{ t('risk.crit') }}</option><option v-for="c in ['A', 'B', 'C']" :key="c" :value="c">{{ c }}</option></select>
 				<select v-model="status" class="form-select form-select-sm" style="max-width: 160px"><option value="">{{ t('common.status') }}</option><option v-for="s in ['overdue', 'due_soon', 'planned']" :key="s" :value="s">{{ t('sched.' + s) }}</option></select>

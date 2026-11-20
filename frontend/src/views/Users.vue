@@ -32,6 +32,10 @@ async function save() {
 	} catch (e) { toast.error(e.details?.[0]?.message || e.message); }
 }
 const facName = (id) => lookups.facilities.find((f) => f.id === id)?.code ?? id;
+async function unlock(u) {
+	try { await api(`/users/${u.id}/unlock`, { method: 'POST' }); toast.success(t('common.saved')); load(); }
+	catch (e) { toast.error(e.message); }
+}
 </script>
 
 <template>
@@ -44,7 +48,9 @@ const facName = (id) => lookups.facilities.find((f) => f.id === id)?.code ?? id;
 			<thead><tr><th>{{ t('users.fullName') }}</th><th>{{ t('users.email') }}</th><th>{{ t('users.role') }}</th><th>{{ t('users.rights') }}</th><th>{{ t('users.lastLogin') }}</th><th></th></tr></thead>
 			<tbody>
 				<tr v-for="u in users" :key="u.id" :class="{ 'text-muted': !u.isActive }">
-					<td>{{ u.fullName }} <span v-if="!u.isActive" class="badge badge-arch">off</span></td><td>{{ u.email }}</td>
+					<td>{{ u.fullName }} <span v-if="!u.isActive" class="badge badge-arch">off</span>
+						<span v-if="u.lockedUntil" class="badge text-bg-danger ms-1" :title="t('users.lockedUntil', { t: u.lockedUntil.slice(0, 16) })"><i class="fa-solid fa-lock me-1"></i>{{ t('users.locked') }}</span>
+						<a v-if="u.lockedUntil" href="#" class="small ms-1" @click.prevent="unlock(u)">{{ t('users.unlock') }}</a></td><td>{{ u.email }}</td>
 					<td><span v-if="u.isAdmin" class="badge text-bg-dark">{{ t('roles.admin') }}</span></td>
 					<td><span v-for="r in u.facilityRoles" :key="r.facilityId" class="badge badge-class me-1">{{ facName(r.facilityId) }} · {{ t('roles.' + r.role) }}</span></td>
 					<td class="small">{{ u.lastLoginAt?.slice(0, 16) || t('users.never') }}</td>

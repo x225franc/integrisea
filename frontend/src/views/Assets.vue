@@ -18,6 +18,7 @@ const q = ref('');
 const cls = ref('');
 const system = ref('');
 const archived = ref(false);
+const discipline = ref('');
 const loading = ref(false);
 const showForm = ref(false);
 const showImport = ref(false);
@@ -30,11 +31,11 @@ async function load() {
 	loading.value = true;
 	try {
 		await lookups.load();
-		const r = await api('/assets', { query: { q: q.value, facility: auth.facility, system: system.value, class: cls.value, archived: archived.value ? '1' : '0', page: page.value, limit } });
+		const r = await api('/assets', { query: { q: q.value, facility: auth.facility, system: system.value, class: cls.value, discipline: discipline.value, archived: archived.value ? '1' : '0', page: page.value, limit } });
 		items.value = r.items; total.value = r.total;
 	} finally { loading.value = false; }
 }
-watch([cls, system, archived, () => auth.facility], () => { page.value = 1; if (!systemsList.value.some((s) => s.id === system.value)) system.value = ''; load(); }, { immediate: true });
+watch([cls, discipline, system, archived, () => auth.facility], () => { page.value = 1; if (!systemsList.value.some((s) => s.id === system.value)) system.value = ''; load(); }, { immediate: true });
 watch(q, () => { clearTimeout(timer); timer = setTimeout(() => { page.value = 1; load(); }, 300); });
 watch(page, load);
 
@@ -60,6 +61,10 @@ const exportFile = (format) => download('/assets/export', { format, facility: au
 			<option value="">{{ t('assets.class') }} : {{ t('common.all') }}</option>
 			<option v-for="c in lookups.classes" :key="c.code" :value="c.code">{{ c.code }} — {{ lookups.className(c.code, locale) }}</option>
 		</select>
+		<select v-model="discipline" class="form-select form-select-sm" style="max-width: 200px">
+			<option value="">{{ t('assets.discipline') }} : {{ t('common.all') }}</option>
+			<option v-for="d in lookups.disciplines" :key="d" :value="d">{{ d }}</option>
+		</select>
 		<select v-model="system" class="form-select form-select-sm" style="max-width: 240px">
 			<option value="">{{ t('assets.system') }} : {{ t('common.all') }}</option>
 			<option v-for="s in systemsList" :key="s.id" :value="s.id">{{ s.code }} — {{ s.name }}</option>
@@ -70,13 +75,14 @@ const exportFile = (format) => download('/assets/export', { format, facility: au
 	<div class="card-is">
 		<div class="table-responsive">
 			<table class="table table-hover table-is align-middle mb-0">
-				<thead><tr><th>{{ t('assets.tag') }}</th><th>{{ t('assets.description') }}</th><th>{{ t('assets.class') }}</th><th>{{ t('assets.system') }}</th><th>{{ t('assets.fluid') }}</th><th>{{ t('assets.material') }}</th><th>{{ t('assets.installYear') }}</th></tr></thead>
+				<thead><tr><th>{{ t('assets.tag') }}</th><th>{{ t('assets.description') }}</th><th>{{ t('assets.class') }}</th><th>{{ t('assets.discipline') }}</th><th>{{ t('assets.system') }}</th><th>{{ t('assets.fluid') }}</th><th>{{ t('assets.material') }}</th><th>{{ t('assets.installYear') }}</th></tr></thead>
 				<tbody>
-					<tr v-if="!loading && !items.length"><td colspan="7" class="text-center text-muted py-4">{{ t('common.empty') }}</td></tr>
+					<tr v-if="!loading && !items.length"><td colspan="8" class="text-center text-muted py-4">{{ t('common.empty') }}</td></tr>
 					<tr v-for="a in items" :key="a.id" class="clickable" @click="router.push(`/assets/${a.id}`)">
 						<td class="fw-semibold">{{ a.tag }} <span v-if="a.archivedAt" class="badge badge-arch">{{ t('assets.archived') }}</span></td>
 						<td>{{ a.description }}</td>
 						<td><span class="badge badge-class">{{ a.classCode }}</span></td>
+						<td class="small">{{ a.discipline || t('common.none') }}</td>
 						<td>{{ a.systemCode }}</td><td>{{ a.fluid || t('common.none') }}</td><td>{{ a.material || t('common.none') }}</td><td>{{ a.installYear || t('common.none') }}</td>
 					</tr>
 				</tbody>

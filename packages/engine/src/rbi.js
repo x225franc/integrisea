@@ -6,8 +6,7 @@
 // plus tard par un moteur validé et sous licence sans toucher au reste de l'application.
 const { yearsBetween, daysBetween, addMonths } = require("./dates");
 const { computeTmin, round2 } = require("./thickness");
-const { computeCorrosion } = require("./corrosion");
-const { governingThickness } = require("./grading");
+const { computeCmlCorrosion } = require("./corrosion");
 
 const clampPof = (p) => Math.min(5, Math.max(1, p));
 
@@ -16,7 +15,13 @@ function pofFromRemainingLife(rl, thresholds) {
 	return 5;
 }
 
-/** Criticité à partir des notes de conséquence : A si une note ≥ 4, B si le maximum vaut 3, sinon C. SCE si S ≥ 4. */
+/** PoF par défaut d'un actif jamais inspecté (ou sans donnée exploitable) : conservateur, fonction de la conséquence. */
+const defaultPofFor = (cof, config) => (cof >= config.defaultPof.cofFrom ? config.defaultPof.high : config.defaultPof.low);
+
+/**
+ * Criticité à partir des notes de conséquence : A si une note ≥ 4, B si le maximum vaut 3, sinon C. SCE si S ≥ 4.
+ * Sans aucune note (ni fluide connu) : CoF = defaultConsequence (5, conservateur) et l'actif est signalé incomplet.
+ */
 function criticality(crit, config) {
 	const vals = [crit?.s, crit?.e, crit?.p].filter((v) => Number.isFinite(v));
 	const missing = vals.length === 0;
@@ -26,8 +31,8 @@ function criticality(crit, config) {
 
 /**
  * input = {
- *   asset: { tag, classCode, tracking:'thickness'|'condition', material, designPressureBarg, odMm, nominalThicknessMm, installYear, crit:{s,e,p} },
- *   inspections: [{ date, grade|null, readings:[{t}|number]|null }],
+ *   asset: { tag, classCode, tracking:'thickness'|'condition', material, designPressureBarg, designTempC, odMm, nominalThicknessMm, installYear, crit:{s,e,p} },
+ *   inspections: [{ date, grade|null, readings:[{cml,t}|number]|null }],
  *   openAnomalies: [{ priority }]
  * }
  */
@@ -45,8 +50,12 @@ function evaluateAsset(input, config, todayIso) {
 
 	let pofBase;
 	let baseDate = null;
-	let rlAtLast = null;
+	let rlAtBase = null;
 	const installBase = asset.installYear ? `${asset.installYear}-07-01` : null;
+	const useDefault = (reason) => {
+		pofBase = defaultPofFor(crit.cof, config);
+		lines.push({ code: "pof_default", params: { pof: pofBase, cof: crit.cof, reason } });
+	};
 
 	if (thickness) {
 		const tm = computeTmin(asset, config);
@@ -54,42 +63,46 @@ function evaluateAsset(input, config, todayIso) {
 		out.tmin = tm.tmin;
 		if (!tm.ok) incomplete.push(...tm.missing);
 
-		const series = inspections
-			.map((i) => ({ date: i.date, t: governingThickness(i.readings) }))
-			.filter((p) => p.t !== null);
-		if (series.length) {
-			const cor = computeCorrosion(asset, series, config);
-			lines.push(...cor.lines);
-			Object.assign(out, { tLast: cor.tLast, tLastDate: cor.tLastDate, crLT: cor.crLT ?? null, crST: cor.crST ?? null, cr: cor.cr, series: cor.series });
-			baseDate = cor.tLastDate;
-			if (tm.ok) {
-				rlAtLast = (cor.tLast - tm.tmin) / cor.cr;
-				const since = Math.max(0, yearsBetween(cor.tLastDate, todayIso));
-				out.rlRaw = rlAtLast - since;
-				out.rl = Math.max(0, out.rlRaw);
-				out.tEst = round2(cor.tLast - cor.cr * since);
-				pofBase = pofFromRemainingLife(out.rlRaw, config.pofThresholds);
-				lines.push({ code: "remaining_life", params: { tLast: cor.tLast, tmin: tm.tmin, cr: cor.cr, rlAtLast, since, rl: out.rl, belowTmin: cor.tLast < tm.tmin } });
-				lines.push({ code: "pof_from_rl", params: { rl: out.rl, pof: pofBase } });
-			}
-		} else {
-			lines.push({ code: "no_thickness_data", params: { pof: config.defaultPofNoData } });
+		const cor = computeCmlCorrosion(asset, inspections, tm.ok ? tm.tmin : null, config, todayIso);
+		lines.push(...cor.lines);
+		out.cmls = cor.cmls;
+		out.governingCml = cor.governing;
+		baseDate = cor.baseDate;
+
+		const gov = cor.cmls.find((c) => c.id === cor.governing);
+		if (gov) {
+			Object.assign(out, { tLast: gov.tLast, tLastDate: gov.lastDate, crLT: gov.crLT ?? null, crST: gov.crST ?? null, cr: gov.cr });
 		}
-		if (pofBase === undefined) pofBase = config.defaultPofNoData;
+		if (cor.cmls.length) {
+			out.tMeasuredMin = Math.min(...cor.cmls.map((c) => c.tLast));
+			out.belowTmin = tm.ok && out.tMeasuredMin < tm.tmin;
+		}
+		if (tm.ok && gov && gov.rlRaw !== undefined) {
+			out.rlRaw = gov.rlRaw;
+			out.rl = gov.rl;
+			out.tEst = round2(gov.tLast - gov.cr * gov.since);
+			pofBase = pofFromRemainingLife(gov.rlRaw, config.pofThresholds);
+			lines.push({ code: "remaining_life", params: { cml: gov.id, tLast: gov.tLast, tmin: tm.tmin, cr: gov.cr, rlAtLast: gov.rlAtLast, since: gov.since, rl: gov.rl, belowTmin: gov.tLast < tm.tmin, cmlCount: cor.cmls.filter((c) => c.usable).length } });
+			lines.push({ code: "pof_from_rl", params: { rl: gov.rl, pof: pofBase } });
+			// Plafond « moitié de la RL » : RL de l'actif à la date de la dernière mesure (la plus faible RL_CML ramenée à cette date).
+			rlAtBase = Math.min(...cor.cmls.filter((c) => c.usable && c.rlAtLast !== undefined).map((c) => c.rlAtLast - Math.max(0, yearsBetween(c.lastDate, baseDate))));
+		} else if (!inspections.some((i) => i.readings?.length)) useDefault("no_inspection");
+		else useDefault(tm.ok ? "no_usable_cml" : "tmin_missing");
+
+		if (out.belowTmin && pofBase < 5) { pofBase = 5; lines.push({ code: "pof_below_tmin", params: { tMeasuredMin: out.tMeasuredMin, tmin: tm.tmin } }); }
 		if (baseDate === null) baseDate = installBase;
 	} else {
 		const graded = inspections.filter((i) => i.grade);
 		const last = graded[graded.length - 1];
 		if (last) {
-			pofBase = last.grade;
+			pofBase = config.gradeToPof[Math.min(4, Math.max(1, last.grade)) - 1];
 			baseDate = last.date;
 			out.lastGrade = last.grade;
 			out.lastGradeDate = last.date;
 			lines.push({ code: "pof_from_grade", params: { grade: last.grade, date: last.date, pof: pofBase } });
 		} else {
-			pofBase = config.defaultPofNoData;
+			useDefault("no_inspection");
 			baseDate = installBase;
-			lines.push({ code: "no_condition_data", params: { pof: pofBase } });
 		}
 	}
 
@@ -106,9 +119,9 @@ function evaluateAsset(input, config, todayIso) {
 	let interval = config.intervals[risk];
 	lines.push({ code: "risk_matrix", params: { pof, cof: crit.cof, risk } });
 	lines.push({ code: "interval_risk", params: { risk, months: interval } });
-	if (thickness && rlAtLast !== null) {
-		const cap = Math.max(0, Math.floor(rlAtLast * 6)); // moitié de la durée de vie résiduelle, en mois
-		if (cap < interval) { interval = cap; lines.push({ code: "interval_cap_rl", params: { months: cap, rlAtLast } }); }
+	if (thickness && rlAtBase !== null) {
+		const cap = Math.max(0, Math.floor(rlAtBase * 6)); // moitié de la durée de vie résiduelle, en mois
+		if (cap < interval) { interval = cap; lines.push({ code: "interval_cap_rl", params: { months: cap, rlAtLast: rlAtBase } }); }
 	}
 	const classMax = config.classMaxInterval?.[asset.classCode];
 	if (classMax != null && classMax < interval) { interval = classMax; lines.push({ code: "interval_cap_class", params: { classCode: asset.classCode, months: classMax } }); }
@@ -132,9 +145,9 @@ function evaluateAsset(input, config, todayIso) {
 
 	return Object.assign(out, {
 		pofBase, pof, risk, riskBeforeOverdue, intervalMonths: interval, baseDate, dueDate, daysToDue, status,
-		rlAtLast, calculable: incomplete.length === 0, incomplete, lines,
+		rlAtLast: rlAtBase, calculable: incomplete.length === 0, incomplete, lines,
 		endOfLife: (out.rl != null && out.rl < config.endOfLifeRlYears) || urgent.length > 0,
 	});
 }
 
-module.exports = { evaluateAsset, criticality, pofFromRemainingLife, clampPof };
+module.exports = { evaluateAsset, criticality, pofFromRemainingLife, defaultPofFor, clampPof };

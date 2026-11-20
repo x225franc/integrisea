@@ -6,16 +6,17 @@ const { requireAdmin } = require("../middleware/auth");
 const { wrap, notFound, conflict, badRequest } = require("../utils/errors");
 const { parse, z, password } = require("../utils/validate");
 const { recordAudit, diff } = require("../services/audit");
+const { revokeAllForUser } = require("../services/session");
 
 router.use(requireAdmin);
 
 const rolesSchema = z.array(z.object({ facilityId: z.number().int().positive(), role: z.enum(["reader", "inspector", "engineer"]) })).max(200);
 
 async function fetchUser(conn, id) {
-	const [[u]] = await conn.query("SELECT id, email, full_name, is_admin, locale, is_active, last_login_at, created_at FROM users WHERE id = ?", [id]);
+	const [[u]] = await conn.query("SELECT id, email, full_name, is_admin, locale, is_active, last_login_at, created_at, failed_logins, IF(locked_until > NOW(), locked_until, NULL) AS locked_until FROM users WHERE id = ?", [id]);
 	if (!u) return null;
 	const [roles] = await conn.query("SELECT facility_id AS facilityId, role FROM user_facility_roles WHERE user_id = ? ORDER BY facility_id", [id]);
-	return { id: u.id, email: u.email, fullName: u.full_name, isAdmin: !!u.is_admin, locale: u.locale, isActive: !!u.is_active, lastLoginAt: u.last_login_at, createdAt: u.created_at, facilityRoles: roles };
+	return { id: u.id, email: u.email, fullName: u.full_name, isAdmin: !!u.is_admin, locale: u.locale, isActive: !!u.is_active, lastLoginAt: u.last_login_at, createdAt: u.created_at, lockedUntil: u.locked_until, facilityRoles: roles };
 }
 
 const writeRoles = async (conn, userId, roles) => {
@@ -60,7 +61,10 @@ router.put("/:id(\\d+)", wrap(async (req, res) => {
 			"UPDATE users SET full_name = COALESCE(?, full_name), is_admin = COALESCE(?, is_admin), locale = COALESCE(?, locale), is_active = COALESCE(?, is_active) WHERE id = ?",
 			[d.fullName ?? null, d.isAdmin == null ? null : +d.isAdmin, d.locale ?? null, d.isActive == null ? null : +d.isActive, id],
 		);
-		if (d.password) await conn.query("UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?", [await bcrypt.hash(d.password, 12), id]);
+		if (d.password) {
+			await conn.query("UPDATE users SET password_hash = ?, token_version = token_version + 1, failed_logins = 0, locked_until = NULL WHERE id = ?", [await bcrypt.hash(d.password, 12), id]);
+			await revokeAllForUser(id, conn); // les sessions ouvertes avec l'ancien mot de passe sont coupées
+		}
 		// Un compte désactivé ou dont les droits changent perd ses sessions en cours.
 		if (d.isActive === false || d.isAdmin !== undefined || d.facilityRoles) await conn.query("UPDATE users SET token_version = token_version + 1 WHERE id = ? AND id <> ?", [id, req.user.id]);
 		if (d.facilityRoles) await writeRoles(conn, id, d.facilityRoles);
@@ -70,6 +74,19 @@ router.put("/:id(\\d+)", wrap(async (req, res) => {
 		return after;
 	});
 	res.json(updated);
+}));
+
+// Déverrouillage manuel d'un compte bloqué après des échecs de connexion (inscrit dans la piste d'audit).
+router.post("/:id(\\d+)/unlock", wrap(async (req, res) => {
+	const id = Number(req.params.id);
+	const out = await withTransaction(async (conn) => {
+		const u = await fetchUser(conn, id);
+		if (!u) throw notFound("Utilisateur introuvable");
+		await conn.query("UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = ?", [id]);
+		await recordAudit(conn, req, { action: "account_unlock", entity: "user", entityId: id, label: u.email });
+		return fetchUser(conn, id);
+	});
+	res.json(out);
 }));
 
 module.exports = router;

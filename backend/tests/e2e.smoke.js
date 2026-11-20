@@ -6,17 +6,13 @@ const base = process.env.E2E_API || "http://localhost:4000/api";
 const envFile = fs.readFileSync(path.resolve(__dirname, "../../.env.development"), "utf8");
 const env = Object.fromEntries(envFile.split("\n").filter((l) => l.includes("=") && !l.startsWith("#")).map((l) => [l.split("=")[0], l.slice(l.indexOf("=") + 1)]));
 
-const call = async (m, p, tok, body, raw) => {
-	const r = await fetch(base + p, { method: m, headers: { ...(tok ? { Authorization: "Bearer " + tok } : {}), ...(body && !raw ? { "Content-Type": "application/json" } : {}) }, body: raw || (body ? JSON.stringify(body) : undefined) });
-	const ct = r.headers.get("content-type") || "";
-	const j = ct.includes("json") ? await r.json().catch(() => ({})) : Buffer.from(await r.arrayBuffer());
-	return { s: r.status, j, ct };
-};
+const { createClient } = require("./client");
+const { call, login: openSession } = createClient(base);
 let ok = 0, ko = 0;
 const t = (name, cond, extra = "") => { cond ? ok++ : ko++; console.log(cond ? "✔" : "✖", name, cond ? "" : extra); };
 
 (async () => {
-	const login = async (e) => (await call("POST", "/auth/login", null, { email: e, password: env.SEED_ADMIN_PASSWORD })).j.token;
+	const login = (e) => openSession(e, env.SEED_ADMIN_PASSWORD);
 	const A = await login(env.SEED_ADMIN_EMAIL), ENG = await login("ingenieur.aur@integrisea.local"), INS = await login("inspecteur@integrisea.local"), RD = await login("lecteur.wha@integrisea.local");
 
 	let r = await call("GET", "/rbi/dashboard", A);

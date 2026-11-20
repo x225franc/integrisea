@@ -18,7 +18,7 @@ const f = ref({
 	tag: a?.tag ?? '', systemId: a?.systemId ?? '', classCode: a?.classCode ?? '', description: a?.description ?? '',
 	fluid: a?.fluid ?? '', material: a?.material ?? '', designPressureBarg: a?.designPressureBarg ?? '', designTempC: a?.designTempC ?? '',
 	odMm: a?.odMm ?? '', nominalThicknessMm: a?.nominalThicknessMm ?? '', installYear: a?.installYear ?? '',
-	mechanisms: (a?.degradationMechanisms ?? []).join(', '), critS: a?.crit.s ?? '', critE: a?.crit.e ?? '', critP: a?.crit.p ?? '',
+	discipline: a?.discipline ?? '', mechanisms: (a?.degradationMechanisms ?? []).join(', '), critS: a?.crit.s ?? '', critE: a?.crit.e ?? '', critP: a?.crit.p ?? '',
 });
 const errors = ref([]);
 const busy = ref(false);
@@ -31,7 +31,7 @@ const scores = [1, 2, 3, 4, 5];
 async function save() {
 	busy.value = true; errors.value = [];
 	const body = {
-		tag: f.value.tag, systemId: Number(f.value.systemId), classCode: f.value.classCode, description: f.value.description,
+		tag: f.value.tag, systemId: Number(f.value.systemId), classCode: f.value.classCode, discipline: f.value.discipline, description: f.value.description,
 		fluid: f.value.fluid, material: f.value.material, designPressureBarg: f.value.designPressureBarg, designTempC: f.value.designTempC,
 		odMm: f.value.odMm, nominalThicknessMm: f.value.nominalThicknessMm, installYear: f.value.installYear,
 		degradationMechanisms: f.value.mechanisms.split(',').map((s) => s.trim()).filter(Boolean),
@@ -66,7 +66,14 @@ async function save() {
 					<option v-for="c in classes" :key="c.code" :value="c.code">{{ c.code }} — {{ lookups.className(c.code, locale) }}</option>
 				</select>
 			</div>
-			<div class="col-12"><label class="form-label">{{ t('assets.description') }} *</label><input v-model="f.description" class="form-control" maxlength="255" required /></div>
+			<div class="col-md-4">
+				<label class="form-label">{{ t('assets.discipline') }}</label>
+				<select v-model="f.discipline" class="form-select">
+					<option value="">{{ t('cfg.defaultDiscipline') }} ({{ lookups.classes.find((c) => c.code === f.classCode)?.defaultDiscipline ?? '—' }})</option>
+					<option v-for="d in lookups.disciplines" :key="d" :value="d">{{ d }}</option>
+				</select>
+			</div>
+			<div class="col-md-8"><label class="form-label">{{ t('assets.description') }} *</label><input v-model="f.description" class="form-control" maxlength="255" required /></div>
 			<div class="col-md-4"><label class="form-label">{{ t('assets.fluid') }}</label><input v-model="f.fluid" class="form-control" maxlength="80" /></div>
 			<div class="col-md-4"><label class="form-label">{{ t('assets.material') }}</label><input v-model="f.material" class="form-control" maxlength="80" /></div>
 			<div class="col-md-4"><label class="form-label">{{ t('assets.installYear') }}</label><input v-model="f.installYear" type="number" min="1900" max="2100" class="form-control" /></div>

@@ -6,6 +6,7 @@ import { useToast } from 'vue-toastification';
 import { api, download } from '@/api';
 import { auth } from '@/stores/auth';
 import { lookups } from '@/stores/lookups';
+import { settings } from '@/stores/settings';
 import { num, STATUS_CLASS, PRIORITY_CLASS, AN_STATUS_CLASS } from '@/utils';
 import AssetForm from '@/components/AssetForm.vue';
 import RiskMatrix from '@/components/RiskMatrix.vue';
@@ -36,6 +37,7 @@ const anomalyForm = ref(null);
 const anomalyOpen = ref(null);
 const partToAdd = ref('');
 
+const matrixProvisional = computed(() => settings.data?._meta?.provisional?.includes('matrix'));
 const canEdit = computed(() => a.value && auth.can(a.value.facilityId, 'engineer'));
 const canInspect = computed(() => a.value && auth.can(a.value.facilityId, 'inspector'));
 const tabs = ['attributes', 'criticality', 'inspections', 'anomalies', 'maintenance', 'spares', 'documents', 'history'];
@@ -101,6 +103,7 @@ const selectedCell = computed(() => (ev.value ? { pof: ev.value.pof, cof: ev.val
 				<div><dt>{{ t('assets.facility') }}</dt><dd>{{ a.facilityName }}</dd></div>
 				<div><dt>{{ t('assets.system') }}</dt><dd>{{ a.systemCode }} — {{ a.systemName }}</dd></div>
 				<div><dt>{{ t('assets.class') }}</dt><dd>{{ lookups.className(a.classCode, locale) }}</dd></div>
+				<div><dt>{{ t('assets.discipline') }}</dt><dd>{{ v(a.discipline) }}</dd></div>
 				<div><dt>{{ t('assets.fluid') }}</dt><dd>{{ v(a.fluid) }}</dd></div>
 				<div><dt>{{ t('assets.material') }}</dt><dd>{{ v(a.material) }}</dd></div>
 				<div><dt>{{ t('assets.installYear') }}</dt><dd>{{ v(a.installYear) }}</dd></div>
@@ -127,6 +130,7 @@ const selectedCell = computed(() => (ev.value ? { pof: ev.value.pof, cof: ev.val
 						<div v-if="!ev.calculable" class="alert alert-warning py-2 small mb-2">{{ t('risk.notCalculable') }} : {{ ev.incomplete.join(', ') }}</div>
 						<dl class="attr-grid small mb-0">
 							<div v-if="ev.tracking === 'thickness'"><dt>{{ t('rbi.tmin') }}</dt><dd>{{ num(ev.tmin) }}</dd></div>
+							<div v-if="ev.tracking === 'thickness' && ev.governingCml"><dt>{{ t('rbi.governing') }}</dt><dd>{{ t('rbi.governingInfo', { cml: ev.governingCml, t: num(ev.tLast), cr: num(ev.cr, 3) }) }}</dd></div>
 							<div v-if="ev.tracking === 'thickness'"><dt>{{ t('rbi.tLast') }}</dt><dd>{{ num(ev.tLast) }}</dd></div>
 							<div v-if="ev.tracking === 'thickness'"><dt>{{ t('rbi.rate') }}</dt><dd>{{ num(ev.cr, 3) }}</dd></div>
 							<div v-if="ev.tracking === 'thickness'"><dt>{{ t('rbi.rl') }}</dt><dd>{{ num(ev.rl, 1) }}</dd></div>
@@ -134,10 +138,22 @@ const selectedCell = computed(() => (ev.value ? { pof: ev.value.pof, cof: ev.val
 							<div><dt>S / E / P</dt><dd>{{ rbi.crit.s ?? '—' }} / {{ rbi.crit.e ?? '—' }} / {{ rbi.crit.p ?? '—' }} <small class="text-muted">({{ rbi.critSource.s === 'asset' ? t('rbi.fromAsset') : t('rbi.fromDefault') }})</small></dd></div>
 						</dl>
 					</div>
-					<div class="card-is p-3"><h2 class="h6">{{ t('rbi.matrixPos') }}</h2><RiskMatrix :matrix="rbi.matrix" :selected="selectedCell" :counts="{ [`${ev.pof}-${ev.cof}`]: 1 }" /></div>
+					<div class="card-is p-3"><h2 class="h6">{{ t('rbi.matrixPos') }}</h2><div v-if="matrixProvisional" class="small text-warning-emphasis mb-2"><span class="badge text-bg-warning me-1">{{ t('prov.badge') }}</span>{{ t('prov.matrix') }}</div><RiskMatrix :matrix="rbi.matrix" :selected="selectedCell" :counts="{ [`${ev.pof}-${ev.cof}`]: 1 }" /></div>
 				</div>
 				<div class="col-lg-7">
-					<div v-if="ev.tracking === 'thickness'" class="card-is p-3 mb-3"><h2 class="h6">{{ t('rbi.thickness') }}</h2><ThicknessChart :series="ev.series ?? []" :nominal="a.nominalThicknessMm" :tmin="ev.tmin" :rate="ev.cr" :install-year="a.installYear" /></div>
+					<div v-if="ev.tracking === 'thickness'" class="card-is p-3 mb-3"><h2 class="h6">{{ t('rbi.thickness') }}</h2><ThicknessChart :cmls="ev.cmls ?? []" :governing="ev.governingCml" :nominal="a.nominalThicknessMm" :tmin="ev.tmin" :install-year="a.installYear" />
+						<div v-if="ev.cmls?.length" class="table-responsive mt-3">
+							<table class="table table-sm table-is mb-0 small">
+								<thead><tr><th>{{ t('rbi.cml') }}</th><th>{{ t('rbi.lastMeasure') }}</th><th>{{ t('rbi.tLast') }}</th><th>{{ t('rbi.refThickness') }}</th><th>{{ t('rbi.rate') }}</th><th>{{ t('rbi.rlCml') }}</th></tr></thead>
+								<tbody>
+									<tr v-for="c in ev.cmls" :key="c.id" :class="{ 'fw-semibold table-active': c.id === ev.governingCml }">
+										<td>{{ c.id }}<span v-if="c.id === ev.governingCml" class="badge text-bg-primary ms-1">{{ t('rbi.governing') }}</span></td>
+										<td>{{ c.lastDate }}</td><td>{{ num(c.tLast, 2) }}</td><td>{{ c.tRef != null ? num(c.tRef, 2) : t('common.none') }}</td>
+										<td>{{ c.cr != null ? num(c.cr, 3) : t('common.none') }}</td><td>{{ c.rlRaw != null ? num(c.rl, 1) : t('common.none') }}</td>
+									</tr>
+								</tbody>
+							</table>
+						</div></div>
 					<div class="card-is p-3">
 						<h2 class="h6 mb-0">{{ t('rbi.calcDetail') }}</h2>
 						<p class="text-muted small">{{ t('rbi.calcHint') }}</p>

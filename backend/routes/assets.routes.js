@@ -10,6 +10,7 @@ const { facilityIdsWithRole, hasRole } = require("../services/permissions");
 const { COLUMNS, assetFields, mechanisms, parseImportRows, toExportRow } = require("../services/assetImport");
 const { readTable, writeTable } = require("../services/tabular");
 const risk = require("../services/risk");
+const { loadSettings } = require("../services/settings");
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 
@@ -19,7 +20,7 @@ const SELECT = `SELECT a.*, s.code AS system_code, s.name AS system_name, s.faci
 const parseJson = (v) => (typeof v === "string" ? JSON.parse(v) : v);
 const mapAsset = (r) => ({
 	id: r.id, tag: r.tag, description: r.description, systemId: r.system_id, systemCode: r.system_code, systemName: r.system_name,
-	facilityId: r.facility_id, facilityCode: r.facility_code, facilityName: r.facility_name, classCode: r.class_code,
+	facilityId: r.facility_id, facilityCode: r.facility_code, facilityName: r.facility_name, classCode: r.class_code, discipline: r.discipline,
 	fluid: r.fluid, material: r.material, designPressureBarg: r.design_pressure_barg, designTempC: r.design_temp_c,
 	odMm: r.od_mm, nominalThicknessMm: r.nominal_thickness_mm, installYear: r.install_year,
 	degradationMechanisms: parseJson(r.degradation_mechanisms) || [], customAttributes: parseJson(r.custom_attributes) || {},
@@ -28,7 +29,7 @@ const mapAsset = (r) => ({
 
 /** Snapshot stable d'un actif pour l'audit (colonnes métier uniquement). */
 const snapshot = (a) => ({
-	tag: a.tag, description: a.description, systemCode: a.systemCode, classCode: a.classCode, fluid: a.fluid, material: a.material,
+	tag: a.tag, description: a.description, systemCode: a.systemCode, classCode: a.classCode, discipline: a.discipline, fluid: a.fluid, material: a.material,
 	designPressureBarg: a.designPressureBarg, designTempC: a.designTempC, odMm: a.odMm, nominalThicknessMm: a.nominalThicknessMm,
 	installYear: a.installYear, degradationMechanisms: a.degradationMechanisms, customAttributes: a.customAttributes,
 	critS: a.crit.s, critE: a.crit.e, critP: a.crit.p, archived: !!a.archivedAt,
@@ -39,6 +40,7 @@ const bodySchema = z.object({
 	tag: z.string().trim().min(1).max(60),
 	systemId: z.number().int().positive(),
 	classCode: z.string().trim().toUpperCase().min(1).max(20),
+	discipline: optStr(40), // vide = discipline par défaut de la classe
 	degradationMechanisms: mechanisms.optional(),
 	customAttributes: z.record(z.string(), z.union([z.string().max(255), z.number(), z.boolean(), z.null()])).optional(),
 	description: F.description, fluid: F.fluid, material: F.material,
@@ -60,6 +62,16 @@ async function assertClassAndSystem(conn, classCode, systemId) {
 	return s.facility_id;
 }
 
+/** Discipline demandée (doit figurer dans la liste configurée) ou, à défaut, discipline par défaut de la classe. */
+async function resolveDiscipline(conn, classCode, requested) {
+	if (requested) {
+		if (!(await loadSettings(conn)).engine.disciplines.includes(requested)) throw badRequest(`Discipline inconnue : ${requested}`);
+		return requested;
+	}
+	const [[c]] = await conn.query("SELECT default_discipline FROM asset_classes WHERE code = ?", [classCode]);
+	return c?.default_discipline ?? null;
+}
+
 const toRow = (d) => [d.description, d.fluid ?? null, d.material ?? null, d.designPressureBarg ?? d.design_pressure_barg ?? null, d.designTempC ?? d.design_temp_c ?? null,
 	d.odMm ?? d.od_mm ?? null, d.nominalThicknessMm ?? d.nominal_thickness_mm ?? null, d.installYear ?? d.install_year ?? null];
 
@@ -67,7 +79,7 @@ const toRow = (d) => [d.description, d.fluid ?? null, d.material ?? null, d.desi
 router.get("/", requireAuth, wrap(async (req, res) => {
 	const q = parse(z.object({
 		q: z.string().trim().max(100).optional(), facility: z.coerce.number().int().optional(), system: z.coerce.number().int().optional(),
-		class: z.string().trim().max(20).optional(), archived: z.enum(["0", "1", "all"]).default("0"),
+		class: z.string().trim().max(20).optional(), discipline: z.string().trim().max(40).optional(), archived: z.enum(["0", "1", "all"]).default("0"),
 		page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(500).default(100),
 	}), req.query);
 	const ids = facilityIdsWithRole(req.user);
@@ -77,6 +89,7 @@ router.get("/", requireAuth, wrap(async (req, res) => {
 	if (q.facility) { where.push("s.facility_id = ?"); params.push(q.facility); }
 	if (q.system) { where.push("a.system_id = ?"); params.push(q.system); }
 	if (q.class) { where.push("a.class_code = ?"); params.push(q.class.toUpperCase()); }
+	if (q.discipline) { where.push("a.discipline = ?"); params.push(q.discipline); }
 	if (q.archived !== "all") where.push(q.archived === "1" ? "a.archived_at IS NOT NULL" : "a.archived_at IS NULL");
 	if (q.q) { where.push("(a.tag LIKE ? OR a.description LIKE ?)"); const like = `%${q.q.replace(/[%_\\]/g, "\\$&")}%`; params.push(like, like); }
 	const w = where.length ? "WHERE " + where.join(" AND ") : "";
@@ -102,7 +115,7 @@ router.get("/export", requireAuth, wrap(async (req, res) => {
 // Modèle vide à remplir pour l'import.
 router.get("/import-template", requireAuth, wrap(async (req, res) => {
 	const format = req.query.format === "csv" ? "csv" : "xlsx";
-	const example = { tag: "10-PL-9999", system: "AUR-M10", class: "PIPE", description: "Exemple", fluid: "Crude oil", material: "CS", design_pressure_barg: 20, design_temp_c: 80, od_mm: 168.3, nominal_thickness_mm: 7.11, install_year: 2014, degradation_mechanisms: "CO2 corrosion|CUI", crit_s: "", crit_e: "", crit_p: "" };
+	const example = { tag: "10-PL-9999", system: "AUR-M10", class: "PIPE", description: "Exemple", fluid: "Crude oil", material: "CS", design_pressure_barg: 20, design_temp_c: 80, od_mm: 168.3, nominal_thickness_mm: 7.11, install_year: 2014, degradation_mechanisms: "CO2 corrosion|CUI", crit_s: "", crit_e: "", crit_p: "", discipline: "" };
 	const buf = await writeTable(COLUMNS, [example], format, "Assets");
 	res.set("Content-Type", format === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "text/csv; charset=utf-8");
 	res.set("Content-Disposition", `attachment; filename="assets-template.${format}"`);
@@ -124,6 +137,7 @@ router.post("/import", requireAuth, upload.single("file"), wrap(async (req, res)
 	const { rows, errors } = parseImportRows(raw, {
 		systemsByCode: new Map(syss.map((s) => [s.code, s])),
 		classCodes: new Set(cls.map((c) => c.code)),
+		disciplines: new Set((await loadSettings()).engine.disciplines),
 	});
 	const allowed = rows.filter((r) => {
 		if (hasRole(req.user, r.facilityId, "engineer")) return true;
@@ -139,12 +153,13 @@ router.post("/import", requireAuth, upload.single("file"), wrap(async (req, res)
 		for (const r of allowed) {
 			const d = r.data;
 			const [[existing]] = await conn.query("SELECT id FROM assets WHERE tag = ?", [d.tag]);
+			const discipline = await resolveDiscipline(conn, d.class_code, d.discipline);
 			if (existing) {
 				const before = await getAsset(conn, existing.id);
 				await conn.query(
-					`UPDATE assets SET system_id=?, class_code=?, description=?, fluid=?, material=?, design_pressure_barg=?, design_temp_c=?, od_mm=?, nominal_thickness_mm=?, install_year=?,
+					`UPDATE assets SET system_id=?, class_code=?, discipline=?, description=?, fluid=?, material=?, design_pressure_barg=?, design_temp_c=?, od_mm=?, nominal_thickness_mm=?, install_year=?,
 					 degradation_mechanisms=?, crit_s=?, crit_e=?, crit_p=? WHERE id=?`,
-					[d.system_id, d.class_code, ...toRow(d), JSON.stringify(d.degradation_mechanisms), d.crit_s ?? null, d.crit_e ?? null, d.crit_p ?? null, existing.id],
+					[d.system_id, d.class_code, discipline, ...toRow(d), JSON.stringify(d.degradation_mechanisms), d.crit_s ?? null, d.crit_e ?? null, d.crit_p ?? null, existing.id],
 				);
 				const after = await getAsset(conn, existing.id);
 				const ch = diff(snapshot(before), snapshot(after));
@@ -152,9 +167,9 @@ router.post("/import", requireAuth, upload.single("file"), wrap(async (req, res)
 				updated++; touched.push(existing.id);
 			} else {
 				const [ins] = await conn.query(
-					`INSERT INTO assets (tag,system_id,class_code,description,fluid,material,design_pressure_barg,design_temp_c,od_mm,nominal_thickness_mm,install_year,degradation_mechanisms,crit_s,crit_e,crit_p,created_by)
-					 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-					[d.tag, d.system_id, d.class_code, ...toRow(d), JSON.stringify(d.degradation_mechanisms), d.crit_s ?? null, d.crit_e ?? null, d.crit_p ?? null, req.user.id],
+					`INSERT INTO assets (tag,system_id,class_code,discipline,description,fluid,material,design_pressure_barg,design_temp_c,od_mm,nominal_thickness_mm,install_year,degradation_mechanisms,crit_s,crit_e,crit_p,created_by)
+					 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+					[d.tag, d.system_id, d.class_code, discipline, ...toRow(d), JSON.stringify(d.degradation_mechanisms), d.crit_s ?? null, d.crit_e ?? null, d.crit_p ?? null, req.user.id],
 				);
 				const after = await getAsset(conn, ins.insertId);
 				await recordAudit(conn, req, { action: "import_create", entity: "asset", entityId: ins.insertId, label: d.tag, facilityId: after.facilityId, after: snapshot(after) });
@@ -181,10 +196,11 @@ router.post("/", requireAuth, wrap(async (req, res) => {
 		if (!hasRole(req.user, facilityId, "engineer")) throw forbidden();
 		const [[dup]] = await conn.query("SELECT id FROM assets WHERE tag = ?", [d.tag]);
 		if (dup) throw conflict("Ce tag existe déjà");
+		const discipline = await resolveDiscipline(conn, d.classCode, d.discipline);
 		const [r] = await conn.query(
-			`INSERT INTO assets (tag,system_id,class_code,description,fluid,material,design_pressure_barg,design_temp_c,od_mm,nominal_thickness_mm,install_year,degradation_mechanisms,custom_attributes,crit_s,crit_e,crit_p,created_by)
-			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-			[d.tag, d.systemId, d.classCode, ...toRow(d), JSON.stringify(d.degradationMechanisms ?? []), JSON.stringify(d.customAttributes ?? {}), d.critS ?? null, d.critE ?? null, d.critP ?? null, req.user.id],
+			`INSERT INTO assets (tag,system_id,class_code,discipline,description,fluid,material,design_pressure_barg,design_temp_c,od_mm,nominal_thickness_mm,install_year,degradation_mechanisms,custom_attributes,crit_s,crit_e,crit_p,created_by)
+			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+			[d.tag, d.systemId, d.classCode, discipline, ...toRow(d), JSON.stringify(d.degradationMechanisms ?? []), JSON.stringify(d.customAttributes ?? {}), d.critS ?? null, d.critE ?? null, d.critP ?? null, req.user.id],
 		);
 		await risk.recompute(conn, [r.insertId]);
 		const a = await getAsset(conn, r.insertId);
@@ -211,10 +227,12 @@ router.put("/:id(\\d+)", requireAuth, wrap(async (req, res) => {
 		}
 		const has = (k) => Object.prototype.hasOwnProperty.call(d, k);
 		const v = (k, cur) => (has(k) ? d[k] ?? null : cur);
+		// Discipline : valeur fournie (vide = défaut de la classe), sinon conservée.
+		const discipline = has("discipline") ? await resolveDiscipline(conn, classCode, d.discipline) : before.discipline;
 		await conn.query(
-			`UPDATE assets SET tag=?, system_id=?, class_code=?, description=?, fluid=?, material=?, design_pressure_barg=?, design_temp_c=?, od_mm=?, nominal_thickness_mm=?, install_year=?,
+			`UPDATE assets SET tag=?, system_id=?, class_code=?, discipline=?, description=?, fluid=?, material=?, design_pressure_barg=?, design_temp_c=?, od_mm=?, nominal_thickness_mm=?, install_year=?,
 			 degradation_mechanisms=?, custom_attributes=?, crit_s=?, crit_e=?, crit_p=? WHERE id=?`,
-			[m.tag, systemId, classCode, m.description, v("fluid", before.fluid), v("material", before.material),
+			[m.tag, systemId, classCode, discipline, m.description, v("fluid", before.fluid), v("material", before.material),
 				v("designPressureBarg", before.designPressureBarg), v("designTempC", before.designTempC), v("odMm", before.odMm),
 				v("nominalThicknessMm", before.nominalThicknessMm), v("installYear", before.installYear),
 				JSON.stringify(d.degradationMechanisms ?? before.degradationMechanisms), JSON.stringify(d.customAttributes ?? before.customAttributes),

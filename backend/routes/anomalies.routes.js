@@ -40,7 +40,7 @@ const snap = (a) => ({ reference: a.reference, tag: a.tag, title: a.title, prior
 router.get("/", requireAuth, wrap(async (req, res) => {
 	const q = parse(z.object({
 		status: z.enum(["open", "Open", "InProgress", "Closed", "all"]).default("open"), priority: PRIORITY.optional(), facility: z.coerce.number().int().optional(),
-		asset: z.coerce.number().int().optional(), q: z.string().max(100).optional(), overdue: z.enum(["1"]).optional(),
+		asset: z.coerce.number().int().optional(), q: z.string().max(100).optional(), overdue: z.enum(["1"]).optional(), discipline: z.string().max(40).optional(),
 		page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(200).default(50), format: z.enum(["csv", "xlsx"]).optional(),
 	}), req.query);
 	const sc = scopeFor(req.user, "s.facility_id", "reader", q.facility);
@@ -49,6 +49,7 @@ router.get("/", requireAuth, wrap(async (req, res) => {
 	if (q.status === "open") where.push("n.status <> 'Closed'"); else if (q.status !== "all") { where.push("n.status = ?"); params.push(q.status); }
 	if (q.priority) { where.push("n.priority = ?"); params.push(q.priority); }
 	if (q.asset) { where.push("n.asset_id = ?"); params.push(q.asset); }
+	if (q.discipline) { where.push("a.discipline = ?"); params.push(q.discipline); }
 	if (q.overdue) { where.push("n.status <> 'Closed' AND n.due_date < ?"); params.push(engine.today()); }
 	if (q.q) { where.push("(a.tag LIKE ? OR n.title LIKE ? OR n.reference LIKE ?)"); const l = `%${q.q.replace(/[%_\\]/g, "\\$&")}%`; params.push(l, l, l); }
 	const w = where.length ? "WHERE " + where.join(" AND ") : "";

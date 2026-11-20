@@ -23,15 +23,21 @@ const CONSEQUENCE_SCALES = {
 	},
 };
 
-// Valeurs de démonstration UNIQUEMENT (fictives, non validées). La table est vide en exploitation.
-const DEMO_ALLOWABLE_STRESS = { CS: 138, "22Cr Duplex": 207, "316L": 115, "CuNi 90/10": 69 };
+// Valeurs de démonstration UNIQUEMENT (FICTIVES, non validées), appliquées sur toute la plage −29 °C à 200 °C. La table est vide en exploitation.
+const demoRange = (s) => ({ fictitious: true, points: [{ tempC: -29, s }, { tempC: 200, s }] });
+const DEMO_ALLOWABLE_STRESS = { CS: demoRange(138), "22Cr Duplex": demoRange(207), "316L": demoRange(115), "CuNi 90/10": demoRange(69) };
+// Familles de matériaux de la démonstration (plancher de vitesse de corrosion) : acier carbone par défaut, alliages résistants pour les autres.
+const DEMO_MATERIAL_FAMILIES = { CS: "carbon", "22Cr Duplex": "cra", "316L": "cra", "CuNi 90/10": "cra" };
 
 const ENGINE_KEYS = [
-	"matrix", "intervals", "classMaxInterval", "allowableStress", "classFormula", "pipe", "vessel", "structuralMin", "pofThresholds",
-	"defaultPofNoData", "minCorrosionRate", "priorityDays", "anomalySuggestion", "repairAlertDays", "endOfLifeRlYears", "dueSoonDays",
+	"matrix", "intervals", "classMaxInterval", "allowableStress", "materialFamilies", "corrosionFloors", "classFormula", "pipe", "vessel", "structuralMin", "pofThresholds",
+	"defaultPof", "gradeToPof", "defaultConsequence", "minShortTermYears", "minLongTermYears", "priorityDays", "anomalySuggestion", "repairAlertDays", "endOfLifeRlYears", "dueSoonDays", "disciplines",
 ];
 const OTHER_KEYS = ["fluidCriticality", "consequenceScales"];
 const ALL_KEYS = [...ENGINE_KEYS, ...OTHER_KEYS];
+
+// Familles de matériaux : saisies avec la table des contraintes ; coefficients ASME (Y, E) : portés par les formules par classe.
+const DERIVED_FROM = { materialFamilies: "allowableStress", pipe: "classFormula", vessel: "classFormula" };
 
 let cache = null;
 const invalidate = () => { cache = null; };
@@ -51,13 +57,32 @@ async function loadSettings(conn = db) {
 	return s;
 }
 
-/** Valeurs par défaut + surcharges, sous forme d'objet clé → valeur (pour l'écran de configuration). */
+/**
+ * Date de validation de chaque paramètre par un administrateur (clé → ISO | null). Tant qu'un paramètre n'a pas été validé
+ * (ou qu'il a été modifié depuis), il est PROVISOIRE : valeur de départ fondée sur les bonnes pratiques, à arbitrer.
+ * Les gabarits d'inspection portent leur propre validation (clé « template:ID »).
+ */
+async function loadValidation(conn = db) {
+	const [rows] = await conn.query("SELECT setting_key, validated_at FROM config_settings");
+	const [tpls] = await conn.query("SELECT id, validated_at FROM inspection_templates WHERE is_active = 1");
+	const out = {};
+	for (const k of ALL_KEYS) out[k] = null;
+	for (const r of rows) if (r.validated_at) out[r.setting_key] = new Date(r.validated_at).toISOString();
+	for (const t of tpls) out[`template:${t.id}`] = t.validated_at ? new Date(t.validated_at).toISOString() : null;
+	// Paramètres sans carte propre dans l'interface : leur statut suit celui de la carte qui les porte.
+	for (const [derived, parent] of Object.entries(DERIVED_FROM)) out[derived] = out[parent];
+	return out;
+}
+
+/** Valeurs par défaut + surcharges, sous forme d'objet clé → valeur (pour l'écran de configuration). `_meta` : état de validation. */
 async function settingsForUi() {
 	const s = await loadSettings();
 	const out = {};
 	for (const k of ENGINE_KEYS) out[k] = s.engine[k];
 	out.fluidCriticality = s.fluidCriticality;
 	out.consequenceScales = s.consequenceScales;
+	const validated = await loadValidation();
+	out._meta = { validated, provisional: Object.keys(validated).filter((k) => !validated[k] && !(k in DERIVED_FROM)) };
 	return out;
 }
 
@@ -69,17 +94,15 @@ async function validateSetting(key, value) {
 	const errs = ENGINE_KEYS.includes(key) ? engine.validateConfig(probe) : [];
 	const num = (v) => typeof v === "number" && Number.isFinite(v);
 	const isObjOf = (o, f) => o && typeof o === "object" && !Array.isArray(o) && Object.values(o).every(f);
-	if (key === "allowableStress" && !isObjOf(value, (v) => num(v) && v > 0)) errs.push("allowableStress : { matériau: contrainte MPa > 0 }");
 	if (key === "classMaxInterval" && !isObjOf(value, (v) => num(v) && v >= 0)) errs.push("classMaxInterval : { classe: mois ≥ 0 }");
 	if (key === "classFormula" && !isObjOf(value, (v) => v === "pipe" || v === "vessel")) errs.push("classFormula : valeurs 'pipe' ou 'vessel'");
 	if (key === "fluidCriticality" && !isObjOf(value, (v) => Array.isArray(v) && v.length === 3 && v.every((n) => Number.isInteger(n) && n >= 1 && n <= 5))) errs.push("fluidCriticality : { fluide: [S,E,P] entiers 1–5 }");
 	if (key === "consequenceScales" && !["s", "e", "p"].every((a) => ["fr", "en"].every((l) => Array.isArray(value?.[a]?.[l]) && value[a][l].length === 5))) errs.push("consequenceScales : { s|e|p: { fr:[5], en:[5] } }");
 	if (["pipe", "vessel"].includes(key) && !(value && num(value.e) && value.e > 0 && (key === "vessel" || num(value.y)))) errs.push(`${key} : coefficients numériques attendus`);
-	if (key === "structuralMin" && !["pipeSmall", "pipeLarge", "pipeSmallMaxOdMm", "vessel"].every((k) => num(value?.[k]) && value[k] > 0)) errs.push("structuralMin : 4 valeurs > 0");
-	if (["defaultPofNoData"].includes(key) && !(Number.isInteger(value) && value >= 1 && value <= 5)) errs.push("defaultPofNoData : entier 1–5");
-	if (["minCorrosionRate", "repairAlertDays", "endOfLifeRlYears", "dueSoonDays"].includes(key) && !(num(value) && value > 0)) errs.push(`${key} : nombre > 0`);
+	// allowableStress, materialFamilies, corrosionFloors, gradeToPof, defaultPof, defaultConsequence, structuralMin, disciplines : validateConfig (moteur).
+	if (["repairAlertDays", "endOfLifeRlYears", "dueSoonDays", "minShortTermYears", "minLongTermYears"].includes(key) && !(num(value) && value > 0)) errs.push(`${key} : nombre > 0`);
 	if (key === "anomalySuggestion" && !["belowTmin", "rlUnder2", "rlUnder5", "grade4", "grade3"].every((k) => ["P1", "P2", "P3", "P4"].includes(value?.[k]))) errs.push("anomalySuggestion : priorités P1–P4");
 	return errs;
 }
 
-module.exports = { loadSettings, settingsForUi, validateSetting, invalidate, ENGINE_KEYS, ALL_KEYS, FLUID_CRITICALITY, CONSEQUENCE_SCALES, DEMO_ALLOWABLE_STRESS };
+module.exports = { loadSettings, loadValidation, settingsForUi, validateSetting, invalidate, ENGINE_KEYS, ALL_KEYS, FLUID_CRITICALITY, CONSEQUENCE_SCALES, DEMO_ALLOWABLE_STRESS, DEMO_MATERIAL_FAMILIES };

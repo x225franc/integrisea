@@ -31,6 +31,7 @@ async function buildInputs(conn, assetIds, settings) {
 		input: {
 			asset: {
 				tag: a.tag, classCode: a.class_code, tracking: a.tracking, material: a.material, designPressureBarg: a.design_pressure_barg,
+				designTempC: a.design_temp_c === null ? null : Number(a.design_temp_c),
 				odMm: a.od_mm, nominalThicknessMm: a.nominal_thickness_mm, installYear: a.install_year, crit: effectiveCrit(a, settings.fluidCriticality),
 			},
 			inspections: byInsp.get(a.id) || [],
@@ -45,7 +46,7 @@ async function upsertRisk(conn, assetId, r, todayIso) {
 		 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		[assetId, r.tracking, r.pof, r.pofBase, r.cof, r.risk, r.criticality, r.sce ? 1 : 0, r.tmin ?? null, r.tLast ?? null, r.cr ?? null,
 			r.rl != null ? Math.round(r.rl * 100) / 100 : null, r.intervalMonths, r.baseDate, r.dueDate, r.daysToDue,
-			r.status === "due_soon" ? "due_soon" : r.status, r.calculable ? 1 : 0, r.endOfLife ? 1 : 0, JSON.stringify(r), todayIso],
+			r.status === "due_soon" ? "due_soon" : r.status, r.calculable ? 1 : 0, r.endOfLife ? 1 : 0, JSON.stringify({ ...r, engineVersion: engine.ENGINE_VERSION }), todayIso],
 	);
 }
 
@@ -70,13 +71,17 @@ async function evaluateOne(conn, assetId, todayIso = engine.today()) {
 	return { evaluation: engine.evaluateAsset(item.input, settings.engine, todayIso), input: item.input, row: item.row };
 }
 
-/** Recalcule tout si le cache est absent ou date d'un autre jour (les échéances évoluent avec la date). */
+/**
+ * Recalcule tout si le cache est absent, date d'un autre jour (les échéances évoluent avec la date)
+ * ou a été produit par une autre version du moteur (règles de calcul modifiées).
+ */
 async function ensureFresh() {
 	const today = engine.today();
 	const [[c]] = await db.query(
 		`SELECT (SELECT COUNT(*) FROM assets a LEFT JOIN asset_risk r ON r.asset_id = a.id WHERE r.asset_id IS NULL) AS missing,
-		        (SELECT COUNT(*) FROM asset_risk WHERE computed_for <> ?) AS stale`, [today]);
-	if (c.missing > 0 || c.stale > 0) await recompute(db, null, today);
+		        (SELECT COUNT(*) FROM asset_risk WHERE computed_for <> ?) AS stale,
+		        (SELECT COUNT(*) FROM asset_risk WHERE COALESCE(JSON_UNQUOTE(JSON_EXTRACT(result, '$.engineVersion')), '') <> ?) AS outdated`, [today, engine.ENGINE_VERSION]);
+	if (c.missing > 0 || c.stale > 0 || c.outdated > 0) await recompute(db, null, today);
 }
 
 module.exports = { recompute, evaluateOne, ensureFresh, buildInputs, effectiveCrit };

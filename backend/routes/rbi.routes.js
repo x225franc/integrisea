@@ -15,7 +15,7 @@ const d10 = (v) => (v ? String(v).slice(0, 10) : null);
 const like = (s) => `%${s.replace(/[%_\\]/g, "\\$&")}%`;
 
 const listQuery = z.object({
-	facility: z.coerce.number().int().optional(), q: z.string().max(100).optional(), class: z.string().max(20).optional(),
+	facility: z.coerce.number().int().optional(), q: z.string().max(100).optional(), class: z.string().max(20).optional(), discipline: z.string().max(40).optional(),
 	pof: z.coerce.number().int().min(1).max(5).optional(), cof: z.coerce.number().int().min(1).max(5).optional(),
 	risk: z.enum(["L", "M", "MH", "H"]).optional(), criticality: z.enum(["A", "B", "C"]).optional(), status: z.enum(["overdue", "due_soon", "planned", "unknown"]).optional(),
 	notCalculable: z.enum(["1"]).optional(), page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(500).default(100),
@@ -28,6 +28,7 @@ function filters(req, q) {
 	const where = ["a.archived_at IS NULL", ...sc.where], params = [...sc.params];
 	const add = (cond, v) => { where.push(cond); params.push(v); };
 	if (q.class) add("a.class_code = ?", q.class);
+	if (q.discipline) add("a.discipline = ?", q.discipline);
 	if (q.pof) add("r.pof = ?", q.pof);
 	if (q.cof) add("r.cof = ?", q.cof);
 	if (q.risk) add("r.risk = ?", q.risk);
@@ -65,7 +66,7 @@ router.get("/assets", requireAuth, wrap(async (req, res) => {
 // --- Matrice : nombre d'actifs par case ---
 router.get("/matrix", requireAuth, wrap(async (req, res) => {
 	await risk.ensureFresh();
-	const q = parse(listQuery.pick({ facility: true, q: true }), req.query);
+	const q = parse(listQuery.pick({ facility: true, q: true, discipline: true }), req.query);
 	const f = filters(req, q);
 	const settings = await loadSettings();
 	let counts = {};
@@ -110,7 +111,7 @@ router.get("/criticality", requireAuth, wrap(async (req, res) => {
 // --- Tableau de bord ---
 router.get("/dashboard", requireAuth, wrap(async (req, res) => {
 	await risk.ensureFresh();
-	const q = parse(listQuery.pick({ facility: true, q: true }), req.query);
+	const q = parse(listQuery.pick({ facility: true, q: true, discipline: true }), req.query);
 	const settings = await loadSettings();
 	const empty = { kpis: { assets: 0, criticalA: 0, overdue: 0, dueSoon: 0, openAnomalies: 0, p1p2: 0, highRisk: 0, notCalculable: 0 }, matrix: settings.engine.matrix, counts: {}, anomaliesByPriority: { P1: 0, P2: 0, P3: 0, P4: 0 }, repairs: [], lowestLife: [], nextInspections: [] };
 	const f = filters(req, q);

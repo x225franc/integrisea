@@ -1,20 +1,20 @@
 import { reactive } from 'vue';
 
-const KEY = 'integrisea_token';
-const read = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
-const write = (v) => { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch { /* stockage indisponible */ } };
-
+// Aucun jeton n'est stocké côté navigateur : la session vit dans des cookies httpOnly (inaccessibles au script de la page).
+// Ce store ne garde que l'utilisateur affiché et ses droits ; la source de vérité reste le serveur.
 const RANK = { reader: 1, inspector: 2, engineer: 3, admin: 4 };
 
 export const auth = reactive({
-	token: read(),
 	user: null,
+	/** Restauration de la session (cookie existant) déjà tentée au démarrage. */
+	restored: false,
 	/** Installation sélectionnée dans le filtre global ('' = toutes). */
 	facility: '',
-	setSession(token, user) { this.token = token; this.user = user; write(token); },
-	setToken(token) { this.token = token; write(token); },
-	logout(expired = false) {
-		this.token = null; this.user = null; this.facility = ''; write(null);
+	setSession(user) { this.user = user; this.restored = true; },
+	async logout(expired = false) {
+		// Révocation côté serveur (jeton de rafraîchissement) puis retour à l'écran de connexion.
+		try { await fetch(`${__API_BASE__}/api/auth/logout`, { method: 'POST', credentials: 'include' }); } catch { /* serveur injoignable : session locale fermée quand même */ }
+		this.user = null; this.facility = '';
 		if (location.pathname !== '/login') location.assign('/login' + (expired ? '?expired=1' : ''));
 	},
 	/** L'utilisateur a-t-il au moins `min` sur l'installation (administrateur = oui partout) ? */

@@ -1,9 +1,10 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { api } from '@/api';
 import { auth } from '@/stores/auth';
+import { settings } from '@/stores/settings';
 import { num, PRIORITY_CLASS } from '@/utils';
 import RiskMatrix from '@/components/RiskMatrix.vue';
 
@@ -12,6 +13,8 @@ const router = useRouter();
 const d = ref(null);
 const q = ref('');
 let timer;
+onMounted(() => settings.load().catch(() => {}));
+const matrixProvisional = computed(() => settings.data?._meta?.provisional?.includes('matrix'));
 
 async function load() { d.value = await api('/rbi/dashboard', { query: { facility: auth.facility, q: q.value } }); }
 watch(() => auth.facility, load, { immediate: true });
@@ -51,7 +54,8 @@ const repairClass = (s) => (s === 'expired' ? 'text-bg-danger' : s === 'expiring
 			<div class="col-lg-6">
 				<div class="card-is p-3 h-100">
 					<h2 class="h6">{{ t('dash.matrix') }}</h2>
-					<p class="text-muted small">{{ t('dash.matrixHint') }}</p>
+					<p class="text-muted small mb-2">{{ t('dash.matrixHint') }}</p>
+					<div v-if="matrixProvisional" class="small mb-2"><span class="badge text-bg-warning me-1"><i class="fa-solid fa-flask me-1"></i>{{ t('prov.badge') }}</span>{{ t('prov.matrix') }}</div>
 					<RiskMatrix :matrix="d.matrix" :counts="d.counts" @select="toCell" />
 				</div>
 			</div>

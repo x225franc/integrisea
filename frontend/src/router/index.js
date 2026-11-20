@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { auth } from '@/stores/auth';
-import { api } from '@/api';
+import { api, hasSession } from '@/api';
 import { setLocale } from '@/i18n';
 
 const routes = [
@@ -25,17 +25,14 @@ const routes = [
 const router = createRouter({ history: createWebHistory(), routes });
 
 router.beforeEach(async (to) => {
-	if (to.meta.public) return auth.token && to.name === 'login' ? { name: 'dashboard' } : true;
-	if (!auth.token) return { name: 'login' };
-	if (!auth.user) {
-		try {
-			auth.user = (await api('/auth/me')).user;
-			setLocale(auth.user.locale);
-		} catch {
-			auth.logout();
-			return false;
-		}
+	// Au premier chargement, on tente de restaurer la session depuis les cookies (rafraîchissement automatique si le jeton d'accès a expiré).
+	if (!auth.restored) {
+		if (hasSession()) {
+			try { const r = await api('/auth/me'); auth.setSession(r.user); setLocale(r.user.locale); } catch { auth.restored = true; }
+		} else auth.restored = true; // pas de cookie de session : inutile d'interroger le serveur
 	}
+	if (to.meta.public) return auth.user && to.name === 'login' ? { name: 'dashboard' } : true;
+	if (!auth.user) return { name: 'login' };
 	if (to.meta.admin && !auth.user.isAdmin) return { name: 'dashboard' };
 	if (to.meta.engineer && !auth.canAny('engineer')) return { name: 'dashboard' };
 	return true;

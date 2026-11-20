@@ -10,12 +10,12 @@ const anomalies = require("./src/anomalies");
 const portfolio = require("./src/portfolio");
 
 module.exports = {
-	ENGINE_VERSION: "0.2.0",
+	ENGINE_VERSION: "0.3.0",
 	...config, ...dates,
-	computeTmin: thickness.computeTmin,
-	computeCorrosion: corrosion.computeCorrosion,
+	computeTmin: thickness.computeTmin, allowableStressAt: thickness.allowableStressAt,
+	computeCmlCorrosion: corrosion.computeCmlCorrosion, corrosionFloor: corrosion.corrosionFloor,
 	computeGrade: grading.computeGrade, governingThickness: grading.governingThickness, defaultTemplates: grading.defaultTemplates,
-	evaluateAsset: rbi.evaluateAsset, criticality: rbi.criticality, pofFromRemainingLife: rbi.pofFromRemainingLife,
+	evaluateAsset: rbi.evaluateAsset, criticality: rbi.criticality, pofFromRemainingLife: rbi.pofFromRemainingLife, defaultPofFor: rbi.defaultPofFor,
 	...anomalies,
 	...portfolio,
 };

@@ -1,16 +1,18 @@
 import { reactive } from 'vue';
 import { api } from '@/api';
+import { settings } from '@/stores/settings';
 
-/** Données de référence partagées (installations, systèmes, classes), rechargées à la demande. */
+/** Données de référence partagées (installations, systèmes, classes, disciplines), rechargées à la demande. */
 export const lookups = reactive({
 	facilities: [],
 	systems: [],
 	classes: [],
+	disciplines: [],
 	loaded: false,
 	async load(force = false) {
 		if (this.loaded && !force) return;
-		const [f, s, c] = await Promise.all([api('/facilities'), api('/systems'), api('/classes')]);
-		this.facilities = f; this.systems = s; this.classes = c; this.loaded = true;
+		const [f, s, c, cfg] = await Promise.all([api('/facilities'), api('/systems'), api('/classes'), settings.load(force)]);
+		this.facilities = f; this.systems = s; this.classes = c; this.disciplines = cfg.disciplines ?? []; this.loaded = true;
 	},
 	reset() { this.loaded = false; },
 	className(code, locale) {

@@ -7,7 +7,7 @@ const path = require("path");
 const bcrypt = require("bcrypt");
 const db = require("../config/db");
 const engine = require("../../packages/engine");
-const { DEMO_ALLOWABLE_STRESS } = require("../services/settings");
+const { DEMO_ALLOWABLE_STRESS, DEMO_MATERIAL_FAMILIES } = require("../services/settings");
 const risk = require("../services/risk");
 
 const CLASSES = [
@@ -22,12 +22,15 @@ const SYSTEMS = [
 	["AUR-M40", "AUR", "M40 Produced water treatment"], ["AUR-M50", "AUR", "M50 Power generation & fuel gas"], ["AUR-HUL", "AUR", "Hull & marine systems"],
 	["AUR-TUR", "AUR", "Turret & swivel"], ["WHA-TOP", "WHA", "Topsides process"], ["WHA-STR", "WHA", "Jacket & structures"], ["WHA-RIS", "WHA", "Risers & conductors"],
 ];
+// Disciplines de la bibliothèque AMDE (données du prototype) → disciplines de l'organisation. Electrical : provisoire, à confirmer.
+const DISCIPLINE_MAP = { Integrity: "Pressure Systems", Mechanical: "Pressure Systems", Instrument: "Pressure Systems", Electrical: "Pressure Systems", Structural: "Structural", Subsea: "Pipelines" };
 const read = (f) => JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../database/seeds", f), "utf8"));
 const d10 = (v) => String(v).slice(0, 10);
 
 async function seedBase() {
 	for (const [i, [code, en, fr, tracking]] of CLASSES.entries()) {
-		await db.query("INSERT INTO asset_classes (code,name_en,name_fr,tracking,sort_order) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE code=code", [code, en, fr, tracking, i]);
+		await db.query("INSERT INTO asset_classes (code,name_en,name_fr,tracking,default_discipline,sort_order) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE code=code",
+			[code, en, fr, tracking, engine.DEFAULT_CLASS_DISCIPLINE[code] ?? null, i]);
 	}
 	for (const t of engine.defaultTemplates()) {
 		await db.query("INSERT INTO inspection_templates (id,name,classes,fields,`rules`) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id",
@@ -53,16 +56,18 @@ async function seedDemo() {
 
 	for (const a of read("demo-assets.json")) {
 		await db.query(
-			`INSERT INTO assets (tag,system_id,class_code,description,fluid,material,design_pressure_barg,design_temp_c,od_mm,nominal_thickness_mm,install_year,degradation_mechanisms,crit_s,crit_e,crit_p)
-			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE tag=tag`,
-			[a.tag, sysId[a.system], a.cls, a.description, a.fluid, a.material, a.design_pressure_barg, a.design_temp_c, a.od_mm, a.nominal_thickness_mm, a.install_year,
+			`INSERT INTO assets (tag,system_id,class_code,discipline,description,fluid,material,design_pressure_barg,design_temp_c,od_mm,nominal_thickness_mm,install_year,degradation_mechanisms,crit_s,crit_e,crit_p)
+			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE tag=tag`,
+			[a.tag, sysId[a.system], a.cls, engine.DEFAULT_CLASS_DISCIPLINE[a.cls] ?? null, a.description, a.fluid, a.material, a.design_pressure_barg, a.design_temp_c, a.od_mm, a.nominal_thickness_mm, a.install_year,
 				JSON.stringify(a.degradation_mechanisms), a.crit?.[0] ?? null, a.crit?.[1] ?? null, a.crit?.[2] ?? null]);
 	}
 	const [assets] = await db.query("SELECT id, tag, class_code FROM assets");
 	const assetId = Object.fromEntries(assets.map((a) => [a.tag, a.id]));
 
 	// Valeurs de DÉMONSTRATION de contraintes admissibles (fictives, non validées) : sans elles, aucun t_min n'est calculable.
+	// Marquées « fictitious » : l'interface les étiquette FICTIVES. Elles couvrent −29 °C à 200 °C ; au-delà, l'actif reste non calculable.
 	await db.query("INSERT INTO config_settings (setting_key, value_json) VALUES ('allowableStress', ?) ON DUPLICATE KEY UPDATE setting_key = setting_key", [JSON.stringify(DEMO_ALLOWABLE_STRESS)]);
+	await db.query("INSERT INTO config_settings (setting_key, value_json) VALUES ('materialFamilies', ?) ON DUPLICATE KEY UPDATE setting_key = setting_key", [JSON.stringify(DEMO_MATERIAL_FAMILIES)]);
 
 	const hist = read("demo-history.json");
 	const [[{ n: nInsp }]] = await db.query("SELECT COUNT(*) AS n FROM inspections");
@@ -103,7 +108,7 @@ async function seedDemo() {
 
 	const [[{ n: nF }]] = await db.query("SELECT COUNT(*) AS n FROM fmea_library");
 	if (!nF) for (const s of hist.strategies) await db.query("INSERT INTO fmea_library (class_code,failure_mode,mechanism,effect,task,method,interval_months,discipline) VALUES (?,?,?,?,?,?,?,?)",
-		[s.cls, s.mode, s.mech, s.effect, s.task, s.method, s.interval === "RBI" ? null : s.interval, s.disc]);
+		[s.cls, s.mode, s.mech, s.effect, s.task, s.method, s.interval === "RBI" ? null : s.interval, DISCIPLINE_MAP[s.disc] ?? s.disc]);
 
 	for (const m of hist.materials) {
 		await db.query("INSERT INTO spare_parts (code,description,category,criticality,stock,min_stock) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE code=code", [m.code, m.desc, m.cat, m.crit, m.stock, m.min]);

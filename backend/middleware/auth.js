@@ -1,19 +1,7 @@
-const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 const { unauthorized, forbidden, wrap } = require("../utils/errors");
 const { hasRole } = require("../services/permissions");
-
-function bearer(req) {
-	const h = req.headers.authorization || "";
-	return h.startsWith("Bearer ") ? h.slice(7).trim() : null;
-}
-
-function signToken(user) {
-	return jwt.sign({ sub: user.id, tv: user.token_version }, process.env.JWT_SECRET, {
-		algorithm: "HS256",
-		expiresIn: process.env.JWT_EXPIRES_IN || "8h",
-	});
-}
+const session = require("../services/session");
 
 /** Charge l'utilisateur et ses droits depuis la base à chaque requête (compte désactivé ou droits modifiés = effet immédiat). */
 async function loadUser(id) {
@@ -35,18 +23,18 @@ async function loadUser(id) {
 	};
 }
 
+/**
+ * Authentification par cookie httpOnly (jeton d'accès de 15 minutes). Les requêtes qui modifient des données doivent en plus
+ * porter l'en-tête X-CSRF-Token lié à la session (protection CSRF). Aucun jeton n'est lisible par le script de la page.
+ */
 const requireAuth = wrap(async (req, _res, next) => {
-	const token = bearer(req);
-	if (!token) throw unauthorized();
-	let decoded;
-	try {
-		decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
-	} catch {
-		throw unauthorized("Token invalide");
-	}
+	const decoded = session.verifyAccess(req);
+	if (!(await session.isSessionLive(decoded.sid))) throw unauthorized("Session expirée, veuillez vous reconnecter");
 	const user = await loadUser(Number(decoded.sub));
 	if (!user || !user.isActive || user.tokenVersion !== decoded.tv) throw unauthorized("Session expirée, veuillez vous reconnecter");
+	if (!session.checkCsrf(req, decoded.sid)) throw forbidden("Jeton CSRF invalide ou absent");
 	req.user = user;
+	req.sessionId = decoded.sid;
 	next();
 });
 
@@ -72,4 +60,4 @@ const requireEngineerAnywhere = [
 	(req, _res, next) => (req.user.isAdmin || Object.values(req.user.facilityRoles).includes("engineer") ? next() : next(forbidden())),
 ];
 
-module.exports = { signToken, loadUser, requireAuth, requireAdmin, requireFacilityRole, requireEngineerAnywhere };
+module.exports = { loadUser, requireAuth, requireAdmin, requireFacilityRole, requireEngineerAnywhere };

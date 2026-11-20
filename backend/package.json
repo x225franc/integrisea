@@ -12,7 +12,7 @@
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
     "db:reset": "node scripts/reset.js",
-    "test:e2e": "node tests/e2e.smoke.js"
+    "test:e2e": "node tests/e2e.smoke.js && node tests/security.smoke.js"
   },
   "license": "UNLICENSED",
   "dependencies": {

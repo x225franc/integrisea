@@ -4,7 +4,7 @@ const { z, optStr, optNum, optInt } = require("../utils/validate");
 const COLUMNS = [
 	"tag", "system", "class", "description", "fluid", "material",
 	"design_pressure_barg", "design_temp_c", "od_mm", "nominal_thickness_mm",
-	"install_year", "degradation_mechanisms", "crit_s", "crit_e", "crit_p",
+	"install_year", "degradation_mechanisms", "crit_s", "crit_e", "crit_p", "discipline",
 ];
 
 const crit = optInt(1, 5);
@@ -34,6 +34,7 @@ const importRowSchema = z.object({
 	system: z.string().trim().min(1, "Système requis"),
 	class: z.string().trim().min(1, "Classe requise"),
 	degradation_mechanisms: mechanisms,
+	discipline: optStr(40), // vide = discipline par défaut de la classe
 	...assetFields,
 });
 
@@ -59,6 +60,7 @@ function parseImportRows(raw, lookups) {
 		const rowErrors = [];
 		if (!sys) rowErrors.push(`Système inconnu : ${d.system}`);
 		if (!lookups.classCodes.has(cls)) rowErrors.push(`Classe inconnue : ${d.class}`);
+		if (d.discipline && lookups.disciplines && !lookups.disciplines.has(d.discipline)) rowErrors.push(`Discipline inconnue : ${d.discipline}`);
 		const key = d.tag.toUpperCase();
 		if (seen.has(key)) rowErrors.push(`Tag en double dans le fichier (ligne ${seen.get(key)})`);
 		else seen.set(key, line);
@@ -80,7 +82,7 @@ function toExportRow(a) {
 		fluid: a.fluid, material: a.material, design_pressure_barg: a.design_pressure_barg,
 		design_temp_c: a.design_temp_c, od_mm: a.od_mm, nominal_thickness_mm: a.nominal_thickness_mm,
 		install_year: a.install_year, degradation_mechanisms: (mech || []).join("|"),
-		crit_s: a.crit_s, crit_e: a.crit_e, crit_p: a.crit_p,
+		crit_s: a.crit_s, crit_e: a.crit_e, crit_p: a.crit_p, discipline: a.discipline,
 	};
 }
 

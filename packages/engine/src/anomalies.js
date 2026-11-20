@@ -13,10 +13,11 @@ const mostUrgent = (list) => list.filter(Boolean).sort((a, b) => ORDER.indexOf(a
 function suggestAnomaly({ evalResult, grade }, config) {
 	const s = config.anomalySuggestion;
 	const triggers = [];
-	if (evalResult?.tLast != null && evalResult.tmin != null && evalResult.tLast < evalResult.tmin) {
-		triggers.push({ code: "below_tmin", priority: s.belowTmin, params: { tLast: evalResult.tLast, tmin: evalResult.tmin } });
+	// Épaisseur mesurée sous t_min sur N'IMPORTE QUEL CML (pas seulement le CML gouvernant).
+	if (evalResult?.belowTmin) {
+		triggers.push({ code: "below_tmin", priority: s.belowTmin, params: { tLast: evalResult.tMeasuredMin, tmin: evalResult.tmin } });
 	}
-	if (evalResult?.rl != null && evalResult.tLast >= evalResult.tmin) {
+	if (evalResult?.rl != null && !evalResult.belowTmin) {
 		if (evalResult.rl < 2) triggers.push({ code: "rl_under_2", priority: s.rlUnder2, params: { rl: evalResult.rl } });
 		else if (evalResult.rl < 5) triggers.push({ code: "rl_under_5", priority: s.rlUnder5, params: { rl: evalResult.rl } });
 	}

@@ -10,7 +10,7 @@ Application originale : aucun nom, écran ou méthode propriétaire d'un éditeu
 ```
 backend/           API Express (routes, middleware, services, scripts de migration/seed, tests)
 frontend/          Vue 3 + Vite + vue-i18n (français par défaut, anglais)
-packages/engine/   Moteur de calcul d'intégrité : pur, sans dépendance, testé (34 tests)
+packages/engine/   Moteur de calcul d'intégrité : pur, sans dépendance, testé (50 tests)
 database/          migrations SQL datées + données de démonstration
 docs/              notes d'avancement par étape, hypothèses de calcul à valider
 prototype/         Maquette HTML d'origine (référence fonctionnelle, non utilisée par l'application)
@@ -40,8 +40,8 @@ Le frontend appelle l'API en relatif (`/api`) : le serveur Vite relaie vers le b
 | `npm start` | idem, en installant les dépendances avant |
 | `npm run build` | build de production du frontend (`frontend/dist`) |
 | `npm run start:prod` | API + frontend avec `.env.production` |
-| `npm test` | tests du moteur (34) et du backend (11) |
-| `npm run test:e2e --prefix backend` | 51 vérifications de bout en bout (API démarrée + base de démonstration) |
+| `npm test` | tests du moteur (50) et du backend (14) |
+| `npm run test:e2e` | 122 vérifications de bout en bout : 51 fonctionnelles + 71 de sécurité et de configuration (API démarrée ; base de démonstration remise à zéro avant par `npm run db:reset`) |
 | `npm run db:migrate` / `db:seed` / `db:reset` | base de données (`db:reset` interdit en production) |
 | `npm run docker:up` / `docker:down` | MySQL + phpMyAdmin |
 | `npm run docker:storage` | service S3 (RustFS), **facultatif** |
@@ -50,6 +50,13 @@ Le frontend appelle l'API en relatif (`/api`) : le serveur Vite relaie vers le b
 ## Environnements
 
 `.env.development` et `.env.production` sont à la racine, **ignorés par git** ; seuls les `.example` sont versionnés. En production, le backend **refuse de démarrer** si un secret est manquant, vaut `change_me` ou si `JWT_SECRET` fait moins de 32 caractères.
+
+## Authentification et sécurité
+
+- **Aucun jeton dans le navigateur** : la session vit dans des **cookies httpOnly + SameSite=Strict**, protégés contre le CSRF (jeton lié à la session, en-tête `X-CSRF-Token`). Jeton d'accès de **15 minutes** + jeton de rafraîchissement **à rotation** (usage unique, 8 h, révocable : la déconnexion coupe la session immédiatement ; un jeton rejoué révoque toute la session).
+- **Verrouillage de compte** : 5 échecs consécutifs bloquent le compte 15 minutes (en plus de la limitation par IP) ; l'administrateur peut le déverrouiller. Échecs, verrouillages et déverrouillages sont dans la piste d'audit. Réglages : `LOGIN_MAX_FAILURES`, `LOGIN_LOCK_MINUTES`, `ACCESS_TOKEN_MINUTES`, `REFRESH_TOKEN_HOURS`.
+- **HTTPS** : l'attribut `Secure` des cookies est **automatique** (actif dès que la connexion arrive en HTTPS, y compris derrière un proxy TLS avec `TRUST_PROXY=1`). Un cookie `Secure` est refusé par le navigateur en HTTP simple : en exploitation, servir l'application en HTTPS (`COOKIE_SECURE=true` pour le forcer).
+- **SSO (OIDC / Azure AD) et double authentification** : non implémentés, mais l'architecture permet de les ajouter sans refonte (`backend/services/authProviders`, `backend/services/session.js`).
 
 ## Rôles et droits
 
@@ -106,4 +113,4 @@ docker run --rm -v integrisea_uploads_data:/data -v "$PWD":/backup alpine tar xz
 
 ## Avancement
 
-Les 6 étapes du cahier des charges sont réalisées — voir [docs/notes-etapes.md](docs/notes-etapes.md). Restent à la charge du client : la validation des calculs, la matrice et les paramètres réels, le mapping Maximo, et les évolutions listées en fin de [docs/hypotheses-a-valider.md](docs/hypotheses-a-valider.md) (mode hors ligne, API 581…).
+Les 6 étapes du cahier des charges sont réalisées — voir [docs/notes-etapes.md](docs/notes-etapes.md). La réponse du client aux hypothèses de calcul est prise en compte (valeurs **provisoires**, signalées dans l'interface) : voir [docs/notes-revue-hypotheses.md](docs/notes-revue-hypotheses.md). Restent à la charge du client : la validation des calculs, la matrice et les paramètres réels, le mapping Maximo, et les évolutions listées en fin de [docs/hypotheses-a-valider.md](docs/hypotheses-a-valider.md) (mode hors ligne, API 581…).

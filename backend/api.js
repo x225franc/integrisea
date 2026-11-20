@@ -25,7 +25,7 @@ const origins = [process.env.FRONTEND_URL, ...(process.env.CORS_ORIGINS || "").s
 app.use(cors({
 	origin: origins,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-	allowedHeaders: ["Content-Type", "Authorization"],
+	allowedHeaders: ["Content-Type", "X-CSRF-Token"],
 	credentials: true,
 }));
 app.use(express.json({ limit: "1mb" }));

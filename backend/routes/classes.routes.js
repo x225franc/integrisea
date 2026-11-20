@@ -15,11 +15,12 @@ const classSchema = z.object({
 	nameFr: z.string().trim().min(1).max(100),
 	tracking: z.enum(["thickness", "condition"]),
 	cfihosCode: optStr(40),
+	defaultDiscipline: optStr(40), // discipline attribuée par défaut aux actifs de la classe (modifiable sur chaque actif)
 	isActive: bool,
 	sortOrder: z.number().int().optional(),
 });
 
-const mapClass = (r) => ({ code: r.code, nameEn: r.name_en, nameFr: r.name_fr, tracking: r.tracking, cfihosCode: r.cfihos_code, isActive: !!r.is_active, sortOrder: r.sort_order });
+const mapClass = (r) => ({ code: r.code, nameEn: r.name_en, nameFr: r.name_fr, tracking: r.tracking, cfihosCode: r.cfihos_code, defaultDiscipline: r.default_discipline, isActive: !!r.is_active, sortOrder: r.sort_order });
 
 router.get("/classes", requireAuth, wrap(async (_req, res) => {
 	const [rows] = await db.query("SELECT * FROM asset_classes ORDER BY sort_order, code");
@@ -31,8 +32,8 @@ router.post("/classes", requireAdmin, wrap(async (req, res) => {
 	await withTransaction(async (conn) => {
 		const [[dup]] = await conn.query("SELECT code FROM asset_classes WHERE code = ?", [d.code]);
 		if (dup) throw conflict("Ce code de classe existe déjà");
-		await conn.query("INSERT INTO asset_classes (code,name_en,name_fr,tracking,cfihos_code,is_active,sort_order) VALUES (?,?,?,?,?,?,?)",
-			[d.code, d.nameEn, d.nameFr, d.tracking, d.cfihosCode ?? null, d.isActive === false ? 0 : 1, d.sortOrder ?? 100]);
+		await conn.query("INSERT INTO asset_classes (code,name_en,name_fr,tracking,cfihos_code,default_discipline,is_active,sort_order) VALUES (?,?,?,?,?,?,?,?)",
+			[d.code, d.nameEn, d.nameFr, d.tracking, d.cfihosCode ?? null, d.defaultDiscipline ?? null, d.isActive === false ? 0 : 1, d.sortOrder ?? 100]);
 		await recordAudit(conn, req, { action: "create", entity: "asset_class", entityId: d.code, label: d.code, after: d });
 	});
 	res.status(201).json(d);
@@ -45,8 +46,8 @@ router.put("/classes/:code", requireAdmin, wrap(async (req, res) => {
 		if (!row) throw notFound();
 		const before = mapClass(row);
 		const next = { ...before, ...d };
-		await conn.query("UPDATE asset_classes SET name_en=?, name_fr=?, tracking=?, cfihos_code=?, is_active=?, sort_order=? WHERE code=?",
-			[next.nameEn, next.nameFr, next.tracking, next.cfihosCode ?? null, next.isActive ? 1 : 0, next.sortOrder, before.code]);
+		await conn.query("UPDATE asset_classes SET name_en=?, name_fr=?, tracking=?, cfihos_code=?, default_discipline=?, is_active=?, sort_order=? WHERE code=?",
+			[next.nameEn, next.nameFr, next.tracking, next.cfihosCode ?? null, next.defaultDiscipline ?? null, next.isActive ? 1 : 0, next.sortOrder, before.code]);
 		const ch = diff(before, next);
 		if (ch.changed) await recordAudit(conn, req, { action: "update", entity: "asset_class", entityId: before.code, label: before.code, ...ch });
 		return next;

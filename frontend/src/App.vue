@@ -44,8 +44,7 @@ async function switchLocale(l) {
 }
 async function changePassword() {
 	try {
-		const r = await api('/auth/change-password', { method: 'POST', body: pwd.value });
-		auth.setToken(r.token);
+		await api('/auth/change-password', { method: 'POST', body: pwd.value }); // une nouvelle session est ouverte par cookies
 		pwdOpen.value = false;
 		pwd.value = { currentPassword: '', newPassword: '' };
 		toast.success(t('common.saved'));

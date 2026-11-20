@@ -2,29 +2,36 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-// Courbe d'épaisseur : relevés (plus faible CML), nominale, t_min et projection à la vitesse retenue.
+// Courbe d'épaisseur : UNE SÉRIE PAR CML (point de mesure), CML gouvernant en évidence, épaisseur nominale, t_min
+// et projection du CML gouvernant à sa vitesse de corrosion retenue.
 const props = defineProps({
-	series: { type: Array, default: () => [] }, // [{ date, t }]
-	nominal: Number, tmin: Number, rate: Number, installYear: Number,
+	cmls: { type: Array, default: () => [] }, // [{ id, points:[{date,t}], cr, tLast, lastDate }]
+	governing: String,
+	nominal: Number, tmin: Number, installYear: Number,
 });
 const { t } = useI18n();
-const W = 620, H = 230, pl = 48, pr = 16, pt = 14, pb = 32;
+const W = 620, H = 250, pl = 48, pr = 16, pt = 14, pb = 32;
 const ms = (d) => new Date(d + 'T00:00:00Z').getTime();
 const YEAR = 365.25 * 864e5;
+// Palette discrète pour distinguer les CML ; le CML gouvernant est toujours en bleu marine, plus épais.
+const COLORS = ['#7a8fa3', '#5fa8a8', '#b59a5b', '#9a7ab5', '#7ab58f', '#b57a7a', '#6f86c9', '#a3a36f'];
 
 const model = computed(() => {
-	if (!props.series.length) return null;
-	const pts = props.series.map((p) => ({ x: ms(p.date), t: p.t, d: p.date }));
-	const last = pts[pts.length - 1];
-	const x0 = props.installYear ? Date.UTC(props.installYear, 6, 1) : pts[0].x;
-	// Projection : jusqu'à atteindre t_min (ou 25 ans maximum), bornée pour rester lisible.
+	const series = props.cmls.filter((c) => c.points?.length);
+	if (!series.length) return null;
+	const all = series.flatMap((c) => c.points.map((p) => ({ x: ms(p.date), t: p.t })));
+	const gov = series.find((c) => c.id === props.governing);
+	const lastX = Math.max(...all.map((p) => p.x));
+	const x0 = props.installYear ? Date.UTC(props.installYear, 6, 1) : Math.min(...all.map((p) => p.x));
+	// Projection du CML gouvernant : jusqu'à t_min (ou 25 ans maximum), bornée pour rester lisible.
 	let proj = null;
-	if (props.rate > 0 && props.tmin != null) {
-		const yrs = Math.min(25, Math.max(2, (last.t - props.tmin) / props.rate));
-		proj = { x1: last.x + yrs * YEAR, t1: last.t - props.rate * yrs };
+	if (gov && gov.cr > 0 && props.tmin != null) {
+		const lastPt = gov.points[gov.points.length - 1];
+		const yrs = Math.min(25, Math.max(2, (lastPt.t - props.tmin) / gov.cr));
+		proj = { x0: ms(lastPt.date), t0: lastPt.t, x1: ms(lastPt.date) + yrs * YEAR, t1: lastPt.t - gov.cr * yrs };
 	}
-	const x1 = Math.max(last.x, proj?.x1 ?? last.x, Date.now());
-	const ys = [props.nominal, props.tmin, ...pts.map((p) => p.t), proj?.t1].filter((v) => Number.isFinite(v));
+	const x1 = Math.max(lastX, proj?.x1 ?? lastX, Date.now());
+	const ys = [props.nominal, props.tmin, ...all.map((p) => p.t), proj?.t1].filter((v) => Number.isFinite(v));
 	const lo = Math.min(...ys), hi = Math.max(...ys);
 	const pad = (hi - lo || 1) * 0.12;
 	const y0 = Math.max(0, lo - pad), y1 = hi + pad;
@@ -35,10 +42,14 @@ const model = computed(() => {
 	const step = Math.max(1, Math.ceil((yrTo - yrFrom) / 6));
 	const xTicks = [];
 	for (let y = yrFrom; y <= yrTo; y += step) xTicks.push({ y, x: X(Date.UTC(y, 0, 1)) });
+	const lines = series.map((c, i) => ({
+		id: c.id, gov: c.id === props.governing, color: c.id === props.governing ? '#0b2a45' : COLORS[i % COLORS.length],
+		line: c.points.map((p) => `${X(ms(p.date))},${Y(p.t)}`).join(' '),
+		dots: c.points.map((p) => ({ cx: X(ms(p.date)), cy: Y(p.t), d: p.date, t: p.t })),
+	})).sort((a, b) => Number(a.gov) - Number(b.gov)); // le CML gouvernant est dessiné en dernier (au-dessus)
 	return {
-		line: pts.map((p) => `${X(p.x)},${Y(p.t)}`).join(' '),
-		dots: pts.map((p) => ({ cx: X(p.x), cy: Y(p.t), d: p.d, t: p.t })),
-		projLine: proj ? { x1: X(last.x), y1: Y(last.t), x2: X(proj.x1), y2: Y(proj.t1) } : null,
+		lines,
+		projLine: proj ? { x1: X(proj.x0), y1: Y(proj.t0), x2: X(proj.x1), y2: Y(proj.t1) } : null,
 		tminY: props.tmin != null ? Y(props.tmin) : null, nomY: props.nominal != null ? Y(props.nominal) : null,
 		yTicks: yTicks.map((v) => ({ v, y: Y(v) })), xTicks,
 	};
@@ -55,11 +66,13 @@ const model = computed(() => {
 			<line v-if="model.nomY !== null" :x1="pl" :x2="W - pr" :y1="model.nomY" :y2="model.nomY" stroke="#8aa0b2" stroke-dasharray="4 3" />
 			<line v-if="model.tminY !== null" :x1="pl" :x2="W - pr" :y1="model.tminY" :y2="model.tminY" stroke="#d6336c" stroke-dasharray="6 3" stroke-width="1.5" />
 			<line v-if="model.projLine" v-bind="model.projLine" stroke="#1d8fa3" stroke-dasharray="3 4" stroke-width="1.5" />
-			<polyline :points="model.line" fill="none" stroke="#0b2a45" stroke-width="2" />
-			<circle v-for="p in model.dots" :key="p.d" :cx="p.cx" :cy="p.cy" r="4" fill="#0b2a45"><title>{{ p.d }} : {{ p.t }} mm</title></circle>
+			<g v-for="s in model.lines" :key="s.id">
+				<polyline :points="s.line" fill="none" :stroke="s.color" :stroke-width="s.gov ? 2.6 : 1.4" :opacity="s.gov ? 1 : 0.85" />
+				<circle v-for="p in s.dots" :key="p.d" :cx="p.cx" :cy="p.cy" :r="s.gov ? 4.2 : 2.8" :fill="s.color"><title>{{ s.id }} · {{ p.d }} : {{ p.t }} mm</title></circle>
+			</g>
 		</svg>
 		<div class="small text-muted d-flex flex-wrap gap-3">
-			<span><span class="lg" style="background:#0b2a45"></span>{{ t('rbi.series') }}</span>
+			<span v-for="s in [...model.lines].reverse()" :key="s.id"><span class="lg" :style="{ background: s.color, height: s.gov ? '4px' : '3px' }"></span><span :class="{ 'fw-semibold text-body': s.gov }">{{ s.id }}<template v-if="s.gov"> ({{ t('rbi.governing') }})</template></span></span>
 			<span><span class="lg" style="background:#8aa0b2"></span>{{ t('rbi.nominal') }} {{ nominal ?? '' }}</span>
 			<span v-if="tmin != null"><span class="lg" style="background:#d6336c"></span>t_min {{ tmin }}</span>
 			<span v-if="model.projLine"><span class="lg" style="background:#1d8fa3"></span>{{ t('rbi.projection') }}</span>

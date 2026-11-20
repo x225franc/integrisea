@@ -20,7 +20,11 @@ Bibliothèque AMDE (CRUD), **stratégie recommandée par actif** (intervalle « 
 ## Étape 6 — Configuration, audit, exports, durcissement, déploiement
 Écrans d'administration : matrice 5×5 éditable, intervalles (risque et classe), seuils de RL, contraintes admissibles, formules, épaisseurs minimales, gabarits, échelles de conséquence, règles par fluide, délais, seuils. **Chaque modification est auditée (avant/après) et recalcule immédiatement tous les risques.** Exports CSV/Excel de toutes les listes, **export Maximo 7.6** (actifs et plans PM), **vues SQL pour Power BI** (`v_bi_assets`, `v_bi_inspections`, `v_bi_anomalies`). Durcissement : en-têtes de sécurité (helmet, CSP stricte côté nginx), limitation de débit globale et sur la connexion, validation de toutes les entrées, requêtes paramétrées, aucun secret dans le code (refus de démarrer en production avec des secrets par défaut), fichiers contrôlés et servis avec `nosniff` + sandbox. Déploiement Docker Compose (application, MySQL, phpMyAdmin, S3) validé de bout en bout.
 
+## Revue des hypothèses (après les 6 étapes)
+Application de la réponse du client aux hypothèses de calcul : RL et vitesse par CML, contraintes matériau × température, formule des appareils au rayon extérieur, PoF par défaut, CoF inconnue, grade → PoF, plancher de vitesse par famille, disciplines et filtres, gabarit Ex à gravité par point, session par cookies avec CSRF, rotation et verrouillage de compte. Toutes les valeurs sont **provisoires** et signalées comme telles. Voir [notes-revue-hypotheses.md](notes-revue-hypotheses.md) et [hypotheses-a-valider.md](hypotheses-a-valider.md).
+
 ## Vérifications effectuées
+*(chiffres des étapes 1 à 6 ; après la revue : 50 tests du moteur, 14 du backend, 51 + 71 vérifications de bout en bout)*
 - `npm test` : 34 tests du moteur + 11 tests du backend.
 - `npm run test:e2e` (API + base de démonstration) : 51 vérifications, dont les 5 critères d'acceptation du cahier des charges.
 - Parcours d'interface pilotés dans un navigateur (16 écrans, saisie d'inspection, anomalie suggérée, clôture bloquée, FR/EN, matrice, documents, PDF, tablette) : aucune erreur.

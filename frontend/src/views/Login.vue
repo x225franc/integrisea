@@ -18,11 +18,11 @@ async function submit() {
 	busy.value = true; error.value = '';
 	try {
 		const r = await api('/auth/login', { method: 'POST', body: { email: email.value, password: password.value } });
-		auth.setSession(r.token, r.user);
+		auth.setSession(r.user);
 		setLocale(r.user.locale);
 		router.replace({ name: 'dashboard' });
 	} catch (e) {
-		error.value = e.status === 429 ? e.message : t('login.failed');
+		error.value = e.status === 429 || e.status === 423 ? e.message : t('login.failed'); // 423 : compte verrouillé (message du serveur)
 	} finally { busy.value = false; }
 }
 </script>

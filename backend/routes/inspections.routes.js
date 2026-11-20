@@ -119,11 +119,12 @@ router.get("/schedule", requireAuth, wrap(async (req, res) => {
 	await risk.ensureFresh();
 	const q = parse(z.object({
 		facility: z.coerce.number().int().optional(), status: z.enum(["overdue", "due_soon", "planned", "unknown"]).optional(), q: z.string().max(100).optional(),
-		class: z.string().max(20).optional(), format: z.enum(["csv", "xlsx"]).optional(), limit: z.coerce.number().int().min(1).max(1000).default(500),
+		class: z.string().max(20).optional(), discipline: z.string().max(40).optional(), format: z.enum(["csv", "xlsx"]).optional(), limit: z.coerce.number().int().min(1).max(1000).default(500),
 	}), req.query);
 	const sc = scopeFor(req.user, "s.facility_id", "reader", q.facility);
 	if (sc.empty) return res.json([]);
 	const where = ["a.archived_at IS NULL", ...sc.where], params = [...sc.params];
+	if (q.discipline) { where.push("a.discipline = ?"); params.push(q.discipline); }
 	if (q.status) { where.push("r.schedule_status = ?"); params.push(q.status); }
 	if (q.class) { where.push("a.class_code = ?"); params.push(q.class); }
 	if (q.q) { where.push("(a.tag LIKE ? OR a.description LIKE ?)"); const l = `%${q.q.replace(/[%_\\]/g, "\\$&")}%`; params.push(l, l); }

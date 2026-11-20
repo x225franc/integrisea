@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { api } from '@/api';
 import { auth } from '@/stores/auth';
+import { lookups } from '@/stores/lookups';
 import { PRIORITY_CLASS, AN_STATUS_CLASS } from '@/utils';
 import AnomalyForm from '@/components/AnomalyForm.vue';
 import AnomalyDialog from '@/components/AnomalyDialog.vue';
@@ -17,6 +18,7 @@ const status = ref('open');
 const priority = ref(route.query.priority || '');
 const q = ref(route.query.q || '');
 const overdue = ref(false);
+const discipline = ref('');
 const items = ref([]);
 const repairs = ref([]);
 const total = ref(0);
@@ -25,12 +27,12 @@ const showNew = ref(false);
 const openId = ref(null);
 let timer;
 
-const query = computed(() => ({ status: status.value, priority: priority.value, q: q.value, facility: auth.facility, overdue: overdue.value ? 1 : '' }));
+const query = computed(() => ({ status: status.value, priority: priority.value, q: q.value, facility: auth.facility, discipline: discipline.value, overdue: overdue.value ? 1 : '' }));
 async function load() {
 	if (tab.value === 'list') { const r = await api('/anomalies', { query: { ...query.value, page: page.value, limit: 50 } }); items.value = r.items; total.value = r.total; }
 	else repairs.value = await api('/anomalies/repairs', { query: { facility: auth.facility } });
 }
-watch([tab, status, priority, overdue, () => auth.facility], () => { page.value = 1; load(); }, { immediate: true });
+watch([tab, status, priority, overdue, discipline, () => auth.facility], () => { page.value = 1; load(); }, { immediate: true });
 watch(q, () => { clearTimeout(timer); timer = setTimeout(() => { page.value = 1; load(); }, 300); });
 watch(page, load);
 const repairClass = (s) => (s === 'expired' ? 'text-bg-danger' : s === 'expiring' ? 'text-bg-warning' : 'text-bg-success');
@@ -52,6 +54,7 @@ const repairClass = (s) => (s === 'expired' ? 'text-bg-danger' : s === 'expiring
 			<input v-model="q" class="form-control form-control-sm" style="max-width: 220px" :placeholder="t('common.search')" />
 			<select v-model="status" class="form-select form-select-sm" style="max-width: 160px"><option value="open">{{ t('an.open') }}</option><option value="all">{{ t('an.all') }}</option><option value="Closed">{{ t('an.Closed') }}</option></select>
 			<select v-model="priority" class="form-select form-select-sm" style="max-width: 140px"><option value="">{{ t('an.priority') }}</option><option v-for="p in ['P1', 'P2', 'P3', 'P4']" :key="p" :value="p">{{ p }}</option></select>
+			<select v-model="discipline" class="form-select form-select-sm" style="max-width: 190px"><option value="">{{ t('assets.discipline') }}</option><option v-for="d in lookups.disciplines" :key="d" :value="d">{{ d }}</option></select>
 			<div class="form-check"><input id="od" v-model="overdue" type="checkbox" class="form-check-input" /><label for="od" class="form-check-label small">{{ t('an.overdue') }}</label></div>
 		</div>
 		<div class="card-is">

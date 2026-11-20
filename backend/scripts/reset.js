@@ -15,8 +15,11 @@ const db = require("../config/db");
 		user: process.env.DB_USER, password: process.env.DB_PASS, database: process.env.DB_NAME,
 	});
 	await conn.query("SET FOREIGN_KEY_CHECKS=0");
-	const [tables] = await conn.query("SHOW TABLES");
-	for (const t of tables) await conn.query(`DROP TABLE IF EXISTS \`${Object.values(t)[0]}\``);
+	const [tables] = await conn.query("SHOW FULL TABLES");
+	for (const t of tables) {
+		const [name, type] = Object.values(t);
+		await conn.query(`DROP ${type === "VIEW" ? "VIEW" : "TABLE"} IF EXISTS \`${name}\``);
+	}
 	await conn.query("SET FOREIGN_KEY_CHECKS=1");
 	await conn.end();
 	await migrate();

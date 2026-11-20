@@ -41,6 +41,15 @@ app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/users", require("./routes/users.routes"));
 app.use("/api/assets", require("./routes/assets.routes"));
 app.use("/api/audit", require("./routes/audit.routes"));
+app.use("/api/inspections", require("./routes/inspections.routes"));
+app.use("/api/anomalies", require("./routes/anomalies.routes"));
+app.use("/api/rbi", require("./routes/rbi.routes"));
+app.use("/api/settings", require("./routes/settings.routes"));
+app.use("/api/maintenance", require("./routes/maintenance.routes"));
+app.use("/api/materials", require("./routes/materials.routes"));
+app.use("/api/documents", require("./routes/documents.routes"));
+app.use("/api/files", require("./routes/documents.routes").filesRouter);
+app.use("/api/export", require("./routes/export.routes"));
 app.use("/api", require("./routes/facilities.routes"));
 app.use("/api", require("./routes/classes.routes"));
 
@@ -58,6 +67,13 @@ app.use((err, _req, res, _next) => {
 
 const port = Number(process.env.BACKEND_PORT || 4000);
 if (require.main === module) {
+	const storage = require("./services/storage");
+	const risk = require("./services/risk");
+	storage.init().catch((e) => console.error("Stockage de fichiers indisponible :", e.message));
+	// Les échéances dépendent de la date : recalcul au démarrage puis toutes les 6 h (en plus des recalculs à chaque changement).
+	const refresh = () => risk.ensureFresh().catch((e) => console.error("Recalcul des risques :", e.message));
+	setTimeout(refresh, 1500);
+	setInterval(refresh, 6 * 3600 * 1000).unref();
 	app.listen(port, () => console.log(`IntegriSea API (${isProd ? "production" : "development"}) sur le port ${port}`));
 }
 

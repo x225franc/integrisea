@@ -62,3 +62,13 @@ async function writeTable(columns, objects, format, sheetName = "Export") {
 }
 
 module.exports = { readTable, writeTable };
+
+/** Envoie un tableau en CSV ou XLSX (téléchargement). */
+async function sendTable(res, name, columns, rows, format) {
+	const f = format === "xlsx" ? "xlsx" : "csv";
+	const buf = await writeTable(columns, rows, f, name.slice(0, 31));
+	res.set("Content-Type", f === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : "text/csv; charset=utf-8");
+	res.set("Content-Disposition", `attachment; filename="${name}.${f}"`);
+	res.send(buf);
+}
+module.exports.sendTable = sendTable;

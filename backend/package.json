@@ -11,12 +11,15 @@
     "test": "node --test tests/*.test.js",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
-    "db:reset": "node scripts/reset.js"
+    "db:reset": "node scripts/reset.js",
+    "test:e2e": "node tests/e2e.smoke.js"
   },
   "license": "UNLICENSED",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1173.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "docx": "^9.16.0",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",
     "express": "^4.18.3",
@@ -25,6 +28,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "mysql2": "^3.22.5",
+    "pdfkit": "^0.21.0",
     "zod": "^4.6.7"
   }
 }

@@ -66,4 +66,10 @@ const requireFacilityRole = (minRole, getFacilityId) => [
 	}),
 ];
 
-module.exports = { signToken, loadUser, requireAuth, requireAdmin, requireFacilityRole };
+/** Administrateur ou ingénieur d'au moins une installation (données transverses : bibliothèque AMDE, catalogue de pièces). */
+const requireEngineerAnywhere = [
+	requireAuth,
+	(req, _res, next) => (req.user.isAdmin || Object.values(req.user.facilityRoles).includes("engineer") ? next() : next(forbidden())),
+];
+
+module.exports = { signToken, loadUser, requireAuth, requireAdmin, requireFacilityRole, requireEngineerAnywhere };

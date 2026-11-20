@@ -9,6 +9,7 @@ const { recordAudit, diff } = require("../services/audit");
 const { facilityIdsWithRole, hasRole } = require("../services/permissions");
 const { COLUMNS, assetFields, mechanisms, parseImportRows, toExportRow } = require("../services/assetImport");
 const { readTable, writeTable } = require("../services/tabular");
+const risk = require("../services/risk");
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 
@@ -134,6 +135,7 @@ router.post("/import", requireAuth, upload.single("file"), wrap(async (req, res)
 
 	let created = 0, updated = 0;
 	await withTransaction(async (conn) => {
+		const touched = [];
 		for (const r of allowed) {
 			const d = r.data;
 			const [[existing]] = await conn.query("SELECT id FROM assets WHERE tag = ?", [d.tag]);
@@ -147,7 +149,7 @@ router.post("/import", requireAuth, upload.single("file"), wrap(async (req, res)
 				const after = await getAsset(conn, existing.id);
 				const ch = diff(snapshot(before), snapshot(after));
 				if (ch.changed) await recordAudit(conn, req, { action: "import_update", entity: "asset", entityId: existing.id, label: d.tag, facilityId: after.facilityId, ...ch });
-				updated++;
+				updated++; touched.push(existing.id);
 			} else {
 				const [ins] = await conn.query(
 					`INSERT INTO assets (tag,system_id,class_code,description,fluid,material,design_pressure_barg,design_temp_c,od_mm,nominal_thickness_mm,install_year,degradation_mechanisms,crit_s,crit_e,crit_p,created_by)
@@ -156,9 +158,10 @@ router.post("/import", requireAuth, upload.single("file"), wrap(async (req, res)
 				);
 				const after = await getAsset(conn, ins.insertId);
 				await recordAudit(conn, req, { action: "import_create", entity: "asset", entityId: ins.insertId, label: d.tag, facilityId: after.facilityId, after: snapshot(after) });
-				created++;
+				created++; touched.push(ins.insertId);
 			}
 		}
+		if (touched.length) await risk.recompute(conn, touched);
 	});
 	res.json({ imported: true, created, updated, errors });
 }));
@@ -183,6 +186,7 @@ router.post("/", requireAuth, wrap(async (req, res) => {
 			 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 			[d.tag, d.systemId, d.classCode, ...toRow(d), JSON.stringify(d.degradationMechanisms ?? []), JSON.stringify(d.customAttributes ?? {}), d.critS ?? null, d.critE ?? null, d.critP ?? null, req.user.id],
 		);
+		await risk.recompute(conn, [r.insertId]);
 		const a = await getAsset(conn, r.insertId);
 		await recordAudit(conn, req, { action: "create", entity: "asset", entityId: a.id, label: a.tag, facilityId, after: snapshot(a) });
 		return a;
@@ -216,6 +220,7 @@ router.put("/:id(\\d+)", requireAuth, wrap(async (req, res) => {
 				JSON.stringify(d.degradationMechanisms ?? before.degradationMechanisms), JSON.stringify(d.customAttributes ?? before.customAttributes),
 				v("critS", before.crit.s), v("critE", before.crit.e), v("critP", before.crit.p), id],
 		);
+		await risk.recompute(conn, [id]);
 		const after = await getAsset(conn, id);
 		const ch = diff(snapshot(before), snapshot(after));
 		if (ch.changed) await recordAudit(conn, req, { action: "update", entity: "asset", entityId: id, label: after.tag, facilityId: after.facilityId, ...ch });

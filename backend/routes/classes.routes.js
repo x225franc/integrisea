@@ -6,6 +6,7 @@ const { requireAuth, requireAdmin } = require("../middleware/auth");
 const { wrap, notFound, conflict } = require("../utils/errors");
 const { parse, z, optStr } = require("../utils/validate");
 const { recordAudit, diff } = require("../services/audit");
+const risk = require("../services/risk");
 
 const bool = z.boolean().optional();
 const classSchema = z.object({
@@ -50,6 +51,7 @@ router.put("/classes/:code", requireAdmin, wrap(async (req, res) => {
 		if (ch.changed) await recordAudit(conn, req, { action: "update", entity: "asset_class", entityId: before.code, label: before.code, ...ch });
 		return next;
 	});
+	await risk.recompute(db, null); // le mode de suivi d'une classe change le calcul
 	res.json(out);
 }));
 

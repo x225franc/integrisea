@@ -78,6 +78,26 @@ docker compose --env-file .env.production exec backend node scripts/seed.js   # 
 
 Les migrations s'appliquent au démarrage du backend. En production le jeu de démonstration n'est pas chargé et la **table des contraintes admissibles est vide** : à renseigner dans Configuration › Matériaux avant d'obtenir des t_min. **HTTPS** : placer un reverse proxy TLS devant le conteneur `frontend` ([deploy/nginx-tls.conf.example](deploy/nginx-tls.conf.example)) et définir `FRONTEND_URL=https://…`, `TRUST_PROXY=1`. Ne pas exposer phpMyAdmin et la base sur Internet (limiter `PMA_PORT` / `DB_PORT` au réseau d'administration).
 
+## Persistance et sauvegarde
+
+Les données vivent dans deux **volumes Docker nommés**, indépendants des conteneurs : `db_data` (base MySQL) et `uploads_data` (fichiers). Ils survivent aux redémarrages, aux mises à jour (`docker compose up --build`) et à `docker compose down` (vérifié : conteneurs détruits puis recréés, données et fichiers intacts).
+
+⚠️ Ils sont **supprimés** par `docker compose down -v`, par « Clean / Purge data » de Docker Desktop ou par la suppression manuelle du volume. Ne jamais utiliser `-v` sur une installation réelle, et **faire des sauvegardes** :
+
+```bash
+# Base de données (fichier .sql)
+docker compose --env-file .env.production exec -T db sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction integrisea' > sauvegarde-base.sql
+
+# Fichiers (archive .tgz)
+docker run --rm -v integrisea_uploads_data:/data -v "$PWD":/backup alpine tar czf /backup/sauvegarde-fichiers.tgz -C /data .
+
+# Restauration
+docker compose --env-file .env.production exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" integrisea' < sauvegarde-base.sql
+docker run --rm -v integrisea_uploads_data:/data -v "$PWD":/backup alpine tar xzf /backup/sauvegarde-fichiers.tgz -C /data
+```
+
+(Le préfixe `integrisea_` est le nom du projet Compose ; `docker volume ls` le confirme.) Copier ces deux fichiers sur un autre disque ou une autre machine régulièrement.
+
 ## Intégrations
 
 - **Power BI** : vues SQL en lecture seule `v_bi_assets`, `v_bi_inspections`, `v_bi_anomalies` (créer un utilisateur MySQL en lecture seule sur ces vues).

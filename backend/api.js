@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const { assertProductionConfig, isProd } = require("./config/env");
 assertProductionConfig();
@@ -28,6 +29,19 @@ app.use(cors({
 	credentials: true,
 }));
 app.use(express.json({ limit: "1mb" }));
+
+// Les réponses de l'API contiennent des données d'intégrité : jamais de cache navigateur ou intermédiaire.
+app.use("/api", (_req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
+
+// Limitation de débit globale par adresse IP (en plus de la limitation stricte de la connexion).
+app.use("/api", rateLimit({
+	windowMs: 60 * 1000,
+	limit: Number(process.env.API_RATE_LIMIT || 600),
+	standardHeaders: true,
+	legacyHeaders: false,
+	skip: (req) => req.path === "/health",
+	message: { message: "Trop de requêtes, réessayez dans un instant" },
+}));
 
 // Configuration publique (aucun secret).
 app.get("/api/config", (_req, res) => {

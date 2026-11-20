@@ -21,11 +21,12 @@ const docClass = ref('');
 const canEdit = computed(() => auth.user.isAdmin || auth.canAny('engineer'));
 async function load() {
 	await lookups.load();
+	if (!docFacility.value) docFacility.value = auth.facility || lookups.facilities[0]?.id || ''; // après le chargement des installations
 	rows.value = await api('/maintenance/fmea', { query: { class: cls.value } });
 	eol.value = await api('/maintenance/end-of-life', { query: { facility: auth.facility } });
 }
 watch([cls, () => auth.facility], load);
-onMounted(() => { docFacility.value = auth.facility || lookups.facilities[0]?.id || ''; load(); });
+onMounted(load);
 
 const open = (r) => (m.value = r ? { ...r, intervalMonths: r.intervalMonths ?? '' } : { classCode: cls.value || 'PIPE', failureMode: '', mechanism: '', effect: '', task: '', method: '', intervalMonths: '', discipline: '' });
 async function save() {

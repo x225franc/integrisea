@@ -16,7 +16,8 @@
     "docker:up": "docker compose --env-file .env.development up -d db phpmyadmin",
     "docker:down": "docker compose --env-file .env.development down",
     "docker:prod": "docker compose --env-file .env.production --profile app up -d --build",
-    "docker:storage": "docker compose --env-file .env.development --profile storage up -d minio"
+    "docker:storage": "docker compose --env-file .env.development --profile storage up -d s3",
+    "test:e2e": "npm run test:e2e --prefix ./backend"
   },
   "keywords": [],
   "license": "UNLICENSED",

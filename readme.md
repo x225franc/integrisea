@@ -1,18 +1,19 @@
 # IntegriSea
 
-Application web de gestion de l'intégrité des actifs offshore (FPSO, plateformes de tête de puits).
+Application web de gestion de l'intégrité des actifs offshore (FPSO, plateformes de tête de puits) : registre des actifs, criticité, inspections, anomalies, RBI semi-quantitatif, stratégie de maintenance, pièces de rechange, documents, piste d'audit, exports GMAO.
 Application originale : aucun nom, écran ou méthode propriétaire d'un éditeur n'est repris.
 
-> ⚠️ **Logiciel lié à la sécurité.** Tous les calculs doivent être validés par des ingénieurs intégrité qualifiés avant toute utilisation opérationnelle. Un bandeau l'indique dans l'application (`SHOW_VALIDATION_WARNING`).
+> ⚠️ **Logiciel lié à la sécurité.** Tous les calculs doivent être validés par des ingénieurs intégrité qualifiés avant toute utilisation opérationnelle. Un bandeau l'indique dans l'application (`SHOW_VALIDATION_WARNING`). La liste des choix à valider est dans [docs/hypotheses-a-valider.md](docs/hypotheses-a-valider.md).
 
 ## Structure
 
 ```
-backend/           API Express (routes, middleware, services, scripts de migration/seed)
-frontend/          Vue 3 + Vite + vue-i18n (FR par défaut, EN)
-packages/engine/   Moteur de calcul d'intégrité, pur et testé (étape 2)
-database/          migrations SQL datées + jeux de données de démonstration
-prototype/         Maquette HTML d'origine (référence fonctionnelle, non utilisée par l'app)
+backend/           API Express (routes, middleware, services, scripts de migration/seed, tests)
+frontend/          Vue 3 + Vite + vue-i18n (français par défaut, anglais)
+packages/engine/   Moteur de calcul d'intégrité : pur, sans dépendance, testé (34 tests)
+database/          migrations SQL datées + données de démonstration
+docs/              notes d'avancement par étape, hypothèses de calcul à valider
+prototype/         Maquette HTML d'origine (référence fonctionnelle, non utilisée par l'application)
 ```
 
 ## Démarrage (développement)
@@ -23,11 +24,13 @@ Prérequis : Node 22+, Docker.
 npm run install:all     # dépendances (racine, backend, frontend)
 npm run docker:up       # MySQL (port 3307) + phpMyAdmin (http://localhost:8088)
 npm run db:migrate      # crée les tables
-npm run db:seed         # classes, administrateur, FPSO Aurora / Wellhead Platform Alpha (données fictives)
+npm run db:seed         # classes, gabarits, administrateur + données de démonstration FICTIVES
 npm run dev             # API (4000) + frontend (5173) ensemble
 ```
 
-Puis ouvrir http://localhost:5173. Identifiants administrateur : `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` du fichier `.env.development`.
+Puis ouvrir http://localhost:5173. L'administrateur est `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` du fichier `.env.development`. Les comptes de démonstration (`ingenieur.aur@…`, `inspecteur@…`, `lecteur.wha@…`, `@integrisea.local`) utilisent le même mot de passe.
+
+Le frontend appelle l'API en relatif (`/api`) : le serveur Vite relaie vers le backend, sans CORS en développement.
 
 ## Commandes (depuis la racine)
 
@@ -37,35 +40,49 @@ Puis ouvrir http://localhost:5173. Identifiants administrateur : `SEED_ADMIN_EMA
 | `npm start` | idem, en installant les dépendances avant |
 | `npm run build` | build de production du frontend (`frontend/dist`) |
 | `npm run start:prod` | API + frontend avec `.env.production` |
-| `npm test` | tests du moteur et du backend |
+| `npm test` | tests du moteur (34) et du backend (11) |
+| `npm run test:e2e --prefix backend` | 51 vérifications de bout en bout (API démarrée + base de démonstration) |
 | `npm run db:migrate` / `db:seed` / `db:reset` | base de données (`db:reset` interdit en production) |
 | `npm run docker:up` / `docker:down` | MySQL + phpMyAdmin |
-| `npm run docker:storage` | MinIO (stockage S3, utile à partir de l'étape 5) |
-| `npm run docker:prod` | déploiement complet (backend + frontend nginx + base) |
+| `npm run docker:storage` | service S3 (RustFS), facultatif en développement |
+| `npm run docker:prod` | déploiement complet (nginx + API + MySQL + phpMyAdmin + S3) |
 
 ## Environnements
 
-`.env.development` et `.env.production` sont à la racine, **ignorés par git**. Seuls les `.example` sont versionnés. En production, le backend refuse de démarrer si un secret est manquant ou vaut `change_me`.
+`.env.development` et `.env.production` sont à la racine, **ignorés par git** ; seuls les `.example` sont versionnés. En production, le backend **refuse de démarrer** si un secret est manquant, vaut `change_me` ou si `JWT_SECRET` fait moins de 32 caractères.
+
+## Rôles et droits
+
+| | Lecteur | Inspecteur | Ingénieur intégrité | Administrateur |
+|---|---|---|---|---|
+| Consulter (par installation) | ✔ | ✔ | ✔ | ✔ |
+| Saisir inspections, créer des anomalies, cocher les actions | | ✔ | ✔ | ✔ |
+| Modifier actifs, clôturer anomalies, nomenclatures, documents, piste d'audit | | | ✔ | ✔ |
+| Utilisateurs, installations, configuration, gabarits | | | | ✔ |
+
+Les droits sont attribués **par installation** (un utilisateur peut être ingénieur sur une installation et lecteur sur une autre).
+
+## Stockage des fichiers
+
+`STORAGE_DRIVER=local` (dossier `backend/uploads`) en développement ; `s3` en production (service Docker `s3`).
+**MinIO** ne publie plus d'images Docker publiques : le service utilise **RustFS** (S3 compatible, Apache 2.0). Le code parle le protocole S3 standard, donc MinIO, AWS S3 ou autre fonctionnent en changeant `S3_ENDPOINT` / `S3_*` (ou `S3_IMAGE` pour l'image Docker). Test réel : `STORAGE_DRIVER=s3 node backend/tests/s3.smoke.js` après `npm run docker:storage`.
 
 ## Déploiement (Docker Compose)
 
 ```bash
-# renseigner .env.production, puis :
-npm run docker:prod
+# 1. renseigner .env.production (tous les "change_me", URLs)
+npm run docker:prod                      # construit et démarre : nginx (FRONTEND_PORT), API, MySQL, phpMyAdmin, S3
 docker compose --env-file .env.production exec backend node scripts/seed.js   # crée l'administrateur (1re fois)
 ```
 
-Les migrations s'appliquent au démarrage du backend. En production, le jeu de démonstration n'est pas chargé (sauf `SEED_DEMO=1`).
+Les migrations s'appliquent au démarrage du backend. En production le jeu de démonstration n'est pas chargé et la **table des contraintes admissibles est vide** : à renseigner dans Configuration › Matériaux avant d'obtenir des t_min. **HTTPS** : placer un reverse proxy TLS devant le conteneur `frontend` ([deploy/nginx-tls.conf.example](deploy/nginx-tls.conf.example)) et définir `FRONTEND_URL=https://…`, `TRUST_PROXY=1`. Ne pas exposer phpMyAdmin et la base sur Internet (limiter `PMA_PORT` / `DB_PORT` au réseau d'administration).
 
-## MinIO (S3)
+## Intégrations
 
-L'image `minio/minio` n'a pas pu être téléchargée depuis la machine de développement (accès refusé par les registres). Le service est dans le profil `storage` ; à lancer avec `npm run docker:storage` lorsque l'image est disponible. Il n'est pas nécessaire avant l'étape 5.
+- **Power BI** : vues SQL en lecture seule `v_bi_assets`, `v_bi_inspections`, `v_bi_anomalies` (créer un utilisateur MySQL en lecture seule sur ces vues).
+- **GMAO (Maximo 7.6)** : Configuration › Exports GMAO (actifs et plans de maintenance préventive, XLSX/CSV). Mapping à confirmer avec l'équipe Maximo.
+- **CSV/Excel** : bouton Exporter sur toutes les listes ; import des actifs avec modèle téléchargeable.
 
 ## Avancement
 
-- [x] **Étape 1 — Socle** : schéma MySQL, authentification email/mot de passe, rôles et droits par installation, hiérarchie Installation → Système → Tag, registre des actifs (création, modification, archivage), classes et attributs configurables, import/export CSV et Excel, piste d'audit, i18n FR/EN.
-- [ ] Étape 2 — Calculs (`packages/engine`)
-- [ ] Étape 3 — Inspections et anomalies
-- [ ] Étape 4 — Criticité, RBI, tableau de bord
-- [ ] Étape 5 — Maintenance, pièces de rechange, documents
-- [ ] Étape 6 — Configuration, export Maximo 7.6, durcissement, déploiement
+Les 6 étapes du cahier des charges sont réalisées — voir [docs/notes-etapes.md](docs/notes-etapes.md). Restent à la charge du client : la validation des calculs, la matrice et les paramètres réels, le mapping Maximo, et les évolutions listées en fin de [docs/hypotheses-a-valider.md](docs/hypotheses-a-valider.md) (mode hors ligne, API 581…).

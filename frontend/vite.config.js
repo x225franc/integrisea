@@ -12,7 +12,8 @@ export default defineConfig(({ mode }) => {
 		root: path.resolve(__dirname, '.'),
 		envDir,
 		resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
-		build: { outDir: 'dist' },
+		// Dossier des fichiers compilés : « static » (et non « assets », qui entrerait en conflit avec la route /assets/:id).
+		build: { outDir: 'dist', assetsDir: 'static' },
 		server: {
 			port: Number(env.FRONTEND_PORT) || 5173,
 			host: true,

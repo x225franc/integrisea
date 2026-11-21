@@ -41,7 +41,7 @@ Le frontend appelle l'API en relatif (`/api`) : le serveur Vite relaie vers le b
 | `npm run build` | build de production du frontend (`frontend/dist`) |
 | `npm run start:prod` | API + frontend avec `.env.production` |
 | `npm test` | tests du moteur (50) et du backend (14) |
-| `npm run test:e2e` | 122 vérifications de bout en bout : 51 fonctionnelles + 71 de sécurité et de configuration (API démarrée ; base de démonstration remise à zéro avant par `npm run db:reset`) |
+| `npm run test:e2e` | 125 vérifications de bout en bout : 51 fonctionnelles + 74 de sécurité et de configuration (API démarrée ; base de démonstration remise à zéro avant par `npm run db:reset`) |
 | `npm run db:migrate` / `db:seed` / `db:reset` | base de données (`db:reset` interdit en production) |
 | `npm run docker:up` / `docker:down` | MySQL + phpMyAdmin |
 | `npm run docker:storage` | service S3 (RustFS), **facultatif** |
@@ -53,8 +53,8 @@ Le frontend appelle l'API en relatif (`/api`) : le serveur Vite relaie vers le b
 
 ## Authentification et sécurité
 
-- **Aucun jeton dans le navigateur** : la session vit dans des **cookies httpOnly + SameSite=Strict**, protégés contre le CSRF (jeton lié à la session, en-tête `X-CSRF-Token`). Jeton d'accès de **15 minutes** + jeton de rafraîchissement **à rotation** (usage unique, 8 h, révocable : la déconnexion coupe la session immédiatement ; un jeton rejoué révoque toute la session).
-- **Verrouillage de compte** : 5 échecs consécutifs bloquent le compte 15 minutes (en plus de la limitation par IP) ; l'administrateur peut le déverrouiller. Échecs, verrouillages et déverrouillages sont dans la piste d'audit. Réglages : `LOGIN_MAX_FAILURES`, `LOGIN_LOCK_MINUTES`, `ACCESS_TOKEN_MINUTES`, `REFRESH_TOKEN_HOURS`.
+- **Aucun jeton dans le navigateur** : la session vit dans des **cookies httpOnly + SameSite=Strict**, protégés contre le CSRF (jeton lié à la session, en-tête `X-CSRF-Token`). Jeton d'accès de **15 minutes** + jeton de rafraîchissement **à rotation** (usage unique, 8 h glissantes, **session maximale absolue de 12 h**, révocable : la déconnexion coupe la session immédiatement ; un jeton rejoué révoque toute la session).
+- **Verrouillage de compte** : 5 échecs consécutifs bloquent le compte 15 minutes (en plus de la limitation par IP) ; l'administrateur peut le déverrouiller. Échecs, verrouillages et déverrouillages sont dans la piste d'audit. Réglages : `LOGIN_MAX_FAILURES`, `LOGIN_LOCK_MINUTES`, `ACCESS_TOKEN_MINUTES`, `REFRESH_TOKEN_HOURS`, `SESSION_MAX_HOURS`. Un refus de connexion affiche toujours le même message (« Identifiants invalides ou compte temporairement verrouillé »).
 - **HTTPS** : l'attribut `Secure` des cookies est **automatique** (actif dès que la connexion arrive en HTTPS, y compris derrière un proxy TLS avec `TRUST_PROXY=1`). Un cookie `Secure` est refusé par le navigateur en HTTP simple : en exploitation, servir l'application en HTTPS (`COOKIE_SECURE=true` pour le forcer).
 - **SSO (OIDC / Azure AD) et double authentification** : non implémentés, mais l'architecture permet de les ajouter sans refonte (`backend/services/authProviders`, `backend/services/session.js`).
 

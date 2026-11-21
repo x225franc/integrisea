@@ -18,6 +18,8 @@ const { recordAudit } = require("./audit");
 const COOKIE = { access: "integrisea_at", refresh: "integrisea_rt", csrf: "integrisea_csrf" };
 const ACCESS_MINUTES = () => Number(process.env.ACCESS_TOKEN_MINUTES || 15);
 const REFRESH_HOURS = () => Number(process.env.REFRESH_TOKEN_HOURS || 8);
+// Durée de session maximale ABSOLUE : le jeton de rafraîchissement se renouvelle (durée glissante) mais jamais au-delà ; une nouvelle connexion est alors obligatoire.
+const SESSION_MAX_HOURS = () => Number(process.env.SESSION_MAX_HOURS || 12);
 const REUSE_GRACE_SECONDS = 10; // deux onglets qui rafraîchissent en même temps ne sont pas une attaque
 
 /**
@@ -69,12 +71,23 @@ function clearCookies(req, res) {
 	res.clearCookie(COOKIE.csrf, { secure, sameSite: "strict", path: "/" });
 }
 
-async function insertRefresh(conn, req, user, familyId) {
+/**
+ * Crée un jeton de rafraîchissement. `parentId` : jeton remplacé (rotation) dont on reprend la date de début de session ;
+ * l'expiration est plafonnée à début de session + SESSION_MAX_HOURS, quelle que soit l'activité.
+ */
+async function insertRefresh(conn, req, user, familyId, parentId = null) {
 	const raw = crypto.randomBytes(48).toString("base64url");
-	const [r] = await conn.query(
-		`INSERT INTO refresh_tokens (user_id, family_id, token_hash, token_version, expires_at, ip, user_agent)
-		 VALUES (?,?,?,?, DATE_ADD(NOW(), INTERVAL ? HOUR), ?, ?)`,
-		[user.id, familyId, sha256(raw), user.token_version ?? user.tokenVersion, REFRESH_HOURS(), req.ip ?? null, String(req.headers["user-agent"] || "").slice(0, 255) || null]);
+	const common = [user.id, familyId, sha256(raw), user.token_version ?? user.tokenVersion];
+	const tail = [req.ip ?? null, String(req.headers["user-agent"] || "").slice(0, 255) || null];
+	const cols = "user_id, family_id, token_hash, token_version, session_started_at, expires_at, ip, user_agent";
+	const [r] = parentId
+		? await conn.query(
+			`INSERT INTO refresh_tokens (${cols})
+			 SELECT ?,?,?,?, session_started_at, LEAST(DATE_ADD(NOW(), INTERVAL ? HOUR), DATE_ADD(session_started_at, INTERVAL ? HOUR)), ?, ? FROM refresh_tokens WHERE id = ?`,
+			[...common, REFRESH_HOURS(), SESSION_MAX_HOURS(), ...tail, parentId])
+		: await conn.query(
+			`INSERT INTO refresh_tokens (${cols}) VALUES (?,?,?,?, NOW(), DATE_ADD(NOW(), INTERVAL ? HOUR), ?, ?)`,
+			[...common, Math.min(REFRESH_HOURS(), SESSION_MAX_HOURS()), ...tail]);
 	return { raw, id: r.insertId };
 }
 
@@ -104,8 +117,8 @@ async function rotate(req, res, loadUser) {
 	let csrfBad = false;
 	await withTransaction(async (conn) => {
 		const [[row]] = await conn.query(
-			`SELECT id, user_id, family_id, token_version, revoked_at, expires_at > NOW() AS live, TIMESTAMPDIFF(SECOND, revoked_at, NOW()) AS revoked_age
-			 FROM refresh_tokens WHERE token_hash = ? FOR UPDATE`, [hash]);
+			`SELECT id, user_id, family_id, token_version, revoked_at, (expires_at > NOW() AND session_started_at > DATE_SUB(NOW(), INTERVAL ? HOUR)) AS live, TIMESTAMPDIFF(SECOND, revoked_at, NOW()) AS revoked_age
+			 FROM refresh_tokens WHERE token_hash = ? FOR UPDATE`, [SESSION_MAX_HOURS(), hash]);
 		if (!row) return;
 		// CSRF vérifié AVANT de consommer le jeton : une requête forgée ne doit ni faire tourner ni invalider la session.
 		if (!checkCsrf(req, row.family_id)) { csrfBad = true; return; }
@@ -116,7 +129,7 @@ async function rotate(req, res, loadUser) {
 		if (!row.live) return;
 		const user = await loadUser(row.user_id);
 		if (!user || !user.isActive || user.tokenVersion !== row.token_version) { await revokeFamily(row.family_id, conn); return; }
-		const next = await insertRefresh(conn, req, user, row.family_id);
+		const next = await insertRefresh(conn, req, user, row.family_id, row.id);
 		await conn.query("UPDATE refresh_tokens SET revoked_at = NOW(), replaced_by = ? WHERE id = ?", [next.id, row.id]);
 		outcome = { user, sid: row.family_id, refresh: next.raw };
 	});

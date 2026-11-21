@@ -50,6 +50,7 @@ const cookieLine = (res, name) => (res.h.getSetCookie?.() ?? []).find((l) => l.s
 	r = await call("POST", "/auth/refresh", S);
 	t("rafraîchissement : 200, nouveau cookie de rafraîchissement", r.s === 200 && S.jar.get("integrisea_rt").value !== oldRt, String(r.s) + JSON.stringify(r.j));
 	r = await call("GET", "/auth/me", S); t("session toujours valide après rotation", r.s === 200);
+
 	// Rejeu de l'ancien jeton après le délai de grâce (10 s) : toute la famille est révoquée.
 	await db.query("UPDATE refresh_tokens SET revoked_at = DATE_SUB(NOW(), INTERVAL 60 SECOND) WHERE user_id = ? AND revoked_at IS NOT NULL", [uid]);
 	const thief = newSession(); thief.jar.set("integrisea_rt", { value: oldRt }); thief.jar.set("integrisea_csrf", S.jar.get("integrisea_csrf"));
@@ -85,6 +86,18 @@ const cookieLine = (res, name) => (res.h.getSetCookie?.() ?? []).find((l) => l.s
 	r = await call("POST", "/auth/refresh", S4); t("… y compris leur jeton de rafraîchissement", r.s === 401);
 	const PWD2 = "Nouveau-Mot-De-Passe-2026!";
 
+	// --- Durée de session maximale absolue (12 h) : session dédiée ---
+	const M = await login(TEST, PWD2);
+	const mine = "user_id = ? AND revoked_at IS NULL ORDER BY id DESC LIMIT 1";
+	await db.query(`UPDATE refresh_tokens SET session_started_at = DATE_SUB(NOW(), INTERVAL '11:55' HOUR_MINUTE) WHERE ${mine}`, [uid]);
+	r = await call("POST", "/auth/refresh", M);
+	const [[cap]] = await db.query(`SELECT TIMESTAMPDIFF(MINUTE, NOW(), expires_at) AS m FROM refresh_tokens WHERE ${mine}`, [uid]);
+	t("5 min avant la limite : rafraîchissement accepté mais l'expiration est plafonnée (pas 8 h)", r.s === 200 && cap.m >= 3 && cap.m <= 5, `${r.s} ${cap.m} min`);
+	await db.query(`UPDATE refresh_tokens SET session_started_at = DATE_SUB(NOW(), INTERVAL 13 HOUR) WHERE ${mine}`, [uid]);
+	r = await call("POST", "/auth/refresh", M);
+	t("session de plus de 12 h : rafraîchissement refusé, nouvelle connexion obligatoire (401)", r.s === 401, String(r.s));
+	r = await login(TEST, PWD2); t("… et une nouvelle connexion fonctionne", !!r);
+
 	// --- Verrouillage de compte : 5 échecs → 15 minutes ---
 	let last;
 	for (let i = 1; i <= 4; i++) { last = await call("POST", "/auth/login", null, { email: TEST, password: "mauvais" + i }); }
@@ -92,7 +105,7 @@ const cookieLine = (res, name) => (res.h.getSetCookie?.() ?? []).find((l) => l.s
 	last = await call("POST", "/auth/login", null, { email: TEST, password: "mauvais5" });
 	t("5e échec : 401 et le compte est verrouillé", last.s === 401);
 	r = await call("POST", "/auth/login", null, { email: TEST, password: PWD2 });
-	t("compte verrouillé : même le bon mot de passe est refusé (423)", r.s === 423 && /verrouill/i.test(r.j.message), `${r.s} ${r.j.message}`);
+	t("compte verrouillé : même le bon mot de passe est refusé, avec le MÊME code et le MÊME message qu'un échec normal", r.s === 401 && r.j.message === last.j.message && r.j.message === "Identifiants invalides ou compte temporairement verrouillé", `${r.s} ${r.j.message}`);
 	const [[u]] = await db.query("SELECT locked_until > NOW() AS locked, TIMESTAMPDIFF(MINUTE, NOW(), locked_until) AS m FROM users WHERE id = ?", [uid]);
 	t("blocage d'environ 15 minutes", u.locked && u.m >= 14 && u.m <= 15, JSON.stringify(u));
 	const [aud] = await db.query("SELECT action, COUNT(*) n FROM audit_log WHERE user_id = ? AND action IN ('login_failed','account_locked','login_blocked') GROUP BY action", [uid]);
@@ -106,7 +119,7 @@ const cookieLine = (res, name) => (res.h.getSetCookie?.() ?? []).find((l) => l.s
 	for (let i = 0; i < 5; i++) await call("POST", "/auth/login", null, { email: TEST, password: "x" + i });
 	await db.query("UPDATE users SET locked_until = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE id = ?", [uid]);
 	r = await call("POST", "/auth/login", null, { email: TEST, password: PWD2 }); t("verrou expiré : connexion à nouveau possible", r.s === 200);
-	r = await call("POST", "/auth/login", null, { email: "inconnu@example.com", password: "x" }); t("email inconnu : même réponse 401 générique", r.s === 401 && r.j.message === "Email ou mot de passe incorrect");
+	r = await call("POST", "/auth/login", null, { email: "inconnu@example.com", password: "x" }); t("email inconnu : même réponse 401 générique", r.s === 401 && r.j.message === last.j.message);
 
 	// --- Nouvelles routes de configuration ---
 	// (idempotence : on retire d'abord toute validation laissée par une exécution précédente)

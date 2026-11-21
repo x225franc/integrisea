@@ -54,7 +54,7 @@ function defaultConfig() {
 		// Délais cibles par priorité (jours).
 		priorityDays: { P1: 7, P2: 30, P3: 90, P4: 365 },
 		// Priorité suggérée à la saisie d'une inspection (proposition, jamais automatique).
-		anomalySuggestion: { belowTmin: "P1", rlUnder2: "P1", rlUnder5: "P3", grade4: "P2", grade3: "P3" },
+		anomalySuggestion: { belowTmin: "P1", rlUnder2: "P1", rlUnder5: "P3", grade4: "P1", grade3: "P3" },
 		// Alerte avant expiration d'une réparation temporaire (jours).
 		repairAlertDays: 90,
 		endOfLifeRlYears: 10,

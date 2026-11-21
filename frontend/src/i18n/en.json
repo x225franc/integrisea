@@ -3,7 +3,7 @@
   "warning": "Unvalidated calculations: all results must be validated by qualified integrity engineers before any operational use.",
   "nav": { "dashboard": "Dashboard", "assets": "Asset register", "facilities": "Facilities & systems", "users": "Users", "config": "Configuration", "audit": "Audit trail", "logout": "Log out", "password": "Password", "allFacilities": "All facilities" },
   "common": { "save": "Save", "cancel": "Cancel", "close": "Close", "edit": "Edit", "create": "Create", "delete": "Delete", "search": "Search…", "all": "All", "none": "—", "loading": "Loading…", "empty": "No results", "yes": "Yes", "no": "No", "actions": "Actions", "saved": "Saved", "error": "An error occurred", "page": "Page", "of": "of", "comingSoon": "Available in a later step" },
-  "login": { "title": "Sign in", "email": "Email", "password": "Password", "submit": "Sign in", "expired": "Session expired, please sign in again.", "failed": "Incorrect email or password" },
+  "login": { "title": "Sign in", "email": "Email", "password": "Password", "submit": "Sign in", "expired": "Session expired, please sign in again.", "failed": "Invalid credentials or account temporarily locked" },
   "dashboard": { "welcome": "Welcome", "assets": "Active assets", "facilities": "Facilities", "systems": "Systems", "byClass": "Assets by class", "next": "The full dashboard (risk, inspections, anomalies) comes with the next steps." },
   "assets": {
     "title": "Asset register", "new": "New asset", "import": "Import", "export": "Export", "template": "Download template", "showArchived": "Archived",

@@ -22,7 +22,7 @@ async function submit() {
 		setLocale(r.user.locale);
 		router.replace({ name: 'dashboard' });
 	} catch (e) {
-		error.value = e.status === 429 || e.status === 423 ? e.message : t('login.failed'); // 423 : compte verrouillé (message du serveur)
+		error.value = e.status === 429 ? e.message : t('login.failed'); // message générique : ne révèle ni l'existence ni le verrouillage d'un compte
 	} finally { busy.value = false; }
 }
 </script>

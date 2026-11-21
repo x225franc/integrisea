@@ -89,9 +89,10 @@ function defaultTemplates() {
 		{
 			id: "EXD", name: "Detailed Ex inspection (IEC 60079-17)", classes: ["EX"],
 			fields: [
-				{ k: "c1", l: "Marking and certificate match the area classification", t: "pf", sev: "critical" }, { k: "c2", l: "Enclosure and glass undamaged", t: "pf" },
+				{ k: "c1", l: "Marking and certificate match the area classification", t: "pf", sev: "critical" }, { k: "c2", l: "Enclosure or glass: no corrosion or superficial damage", t: "pf" },
+				{ k: "c2b", l: "Enclosure or glass: no crack, breakage or deformation", t: "pf", sev: "critical" },
 				{ k: "c3", l: "Flamepath gaps and fasteners satisfactory", t: "pf", sev: "critical" }, { k: "c4", l: "Cable glands secure and correct type", t: "pf", sev: "critical" },
-				{ k: "c5", l: "Earthing and bonding intact", t: "pf", sev: "critical" }, { k: "c6", l: "No unauthorised modifications", t: "pf" }, notes,
+				{ k: "c5", l: "Earthing and bonding intact", t: "pf", sev: "critical" }, { k: "c6", l: "No unauthorised modifications", t: "pf", sev: "critical" }, notes,
 			],
 			// Gravité par point : critique non conforme → ≥ 3 ; autre non conforme → ≥ 2 ; 3 non conformes ou plus → 4. (provisoire)
 			rules: [{ type: "severityFail", critical: 3, normal: 2, countAtLeast: 3, countGrade: 4 }],

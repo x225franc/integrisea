@@ -407,25 +407,27 @@ test("grade structures : fissure → 4 ; revêtement > 30 % → ≥ 3 ; grade sa
 });
 
 // §3 gabarit Ex : gravité par point de contrôle
-const exData = (fails) => Object.fromEntries(["c1", "c2", "c3", "c4", "c5", "c6"].map((k) => [k, fails.includes(k) ? "Fail" : "Pass"]));
-test("grade Ex : un point CRITIQUE non conforme (certificat, chemin de flamme, presse-étoupes, terre) → grade ≥ 3", () => {
+const exData = (fails) => Object.fromEntries(["c1", "c2", "c2b", "c3", "c4", "c5", "c6"].map((k) => [k, fails.includes(k) ? "Fail" : "Pass"]));
+test("grade Ex : un point CRITIQUE non conforme (certificat, fissure de l'enceinte/verre, chemin de flamme, presse-étoupes, terre, modifications non autorisées) → grade ≥ 3", () => {
 	const g = (f) => E.computeGrade(tpl("EXD"), exData(f)).grade;
 	assert.equal(g([]), 1);
-	for (const k of ["c1", "c3", "c4", "c5"]) assert.equal(g([k]), 3, `point critique ${k}`);
+	for (const k of ["c1", "c2b", "c3", "c4", "c5", "c6"]) assert.equal(g([k]), 3, `point critique ${k}`);
 });
 
-test("grade Ex : un autre point non conforme → ≥ 2 ; 3 points non conformes ou plus → 4", () => {
+test("grade Ex : corrosion/dommage superficiel de l'enceinte (non critique) → 2 ; 3 points non conformes ou plus → 4", () => {
 	const g = (f) => E.computeGrade(tpl("EXD"), exData(f)).grade;
-	assert.equal(g(["c2"]), 2); assert.equal(g(["c6"]), 2);
-	assert.equal(g(["c2", "c6"]), 2); // deux points non critiques : reste 2
+	assert.equal(g(["c2"]), 2);
+	assert.equal(g(["c2", "c2b"]), 3); // dommage superficiel + fissure : la fissure (critique) l'emporte
 	assert.equal(g(["c1", "c2"]), 3);
 	assert.equal(g(["c2", "c6", "c1"]), 4); // trois points
-	assert.equal(g(["c1", "c2", "c3", "c4", "c5", "c6"]), 4);
+	assert.equal(g(["c1", "c2", "c2b", "c3", "c4", "c5", "c6"]), 4);
+	assert.equal(tpl("EXD").fields.find((f) => f.k === "c6").sev, "critical"); // « Modifications non autorisées » = critique
+	assert.equal(tpl("EXD").fields.find((f) => f.k === "c2").sev, undefined);
 });
 
 test("grade Ex : la gravité de chaque point est portée par le gabarit (configurable)", () => {
 	const t = JSON.parse(JSON.stringify(tpl("EXD")));
-	t.fields.find((f) => f.k === "c2").sev = "critical"; // on promeut « enceinte et verre » en point critique
+	t.fields.find((f) => f.k === "c2").sev = "critical"; // on promeut « corrosion superficielle » en point critique
 	t.fields.find((f) => f.k === "c1").sev = undefined; // et on rétrograde « marquage »
 	assert.equal(E.computeGrade(t, exData(["c2"])).grade, 3);
 	assert.equal(E.computeGrade(t, exData(["c1"])).grade, 2);
@@ -448,17 +450,18 @@ test("épaisseur gouvernante : plus faible lecture valide", () => {
 });
 
 // ---------------------------------------------------------------- §4 anomalies
-test("anomalie : suggestions — épaisseur < t_min → P1 ; RL < 2 → P1 ; RL < 5 → P3 ; grade 4 → P2 ; grade 3 → P3", () => {
+test("anomalie : suggestions — épaisseur < t_min → P1 ; RL < 2 → P1 ; RL < 5 → P3 ; grade 4 → P1 ; grade 3 → P3", () => {
 	const ok = { tLast: 5, tmin: 2.8, rl: 20 };
 	assert.equal(E.suggestAnomaly({ evalResult: ok, grade: 2 }, cfg()), null);
 	assert.equal(E.suggestAnomaly({ evalResult: ok, grade: 3 }, cfg()).priority, "P3");
-	assert.equal(E.suggestAnomaly({ evalResult: ok, grade: 4 }, cfg()).priority, "P2");
+	assert.equal(E.suggestAnomaly({ evalResult: ok, grade: 4 }, cfg()).priority, "P1");
 	assert.equal(E.suggestAnomaly({ evalResult: { ...ok, rl: 4 }, grade: null }, cfg()).priority, "P3");
 	assert.equal(E.suggestAnomaly({ evalResult: { ...ok, rl: 1.5 }, grade: null }, cfg()).priority, "P1"); // modifié : était P2
 	assert.equal(E.defaultConfig().anomalySuggestion.rlUnder2, "P1");
 	// plusieurs déclencheurs : la priorité la plus urgente l'emporte
 	assert.equal(E.suggestAnomaly({ evalResult: { belowTmin: true, tMeasuredMin: 2, tmin: 2.8, rl: 0 }, grade: 3 }, cfg()).priority, "P1");
-	assert.equal(E.suggestAnomaly({ evalResult: { ...ok, rl: 4 }, grade: 4 }, cfg()).priority, "P2");
+	assert.equal(E.suggestAnomaly({ evalResult: { ...ok, rl: 4 }, grade: 4 }, cfg()).priority, "P1"); // grade 4 l'emporte sur RL < 5 (P3)
+	assert.equal(E.defaultConfig().anomalySuggestion.grade4, "P1");
 });
 
 test("anomalie : clôture impossible tant qu'une action est ouverte (critère d'acceptation)", () => {
